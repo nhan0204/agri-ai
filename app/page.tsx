@@ -580,7 +580,7 @@ export default function Home() {
                       <motion.div variants={fadeInUp}>
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                           <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8">
-                            Start Free Trial
+                            Start Now
                           </Button>
                         </motion.div>
                       </motion.div>
@@ -599,7 +599,7 @@ export default function Home() {
                       viewport={{ once: true }}
                       transition={{ duration: 0.6, delay: 0.3, ease: [0.6, -0.05, 0.01, 0.99] }}
                     >
-                      No credit card required • 14-day free trial • Full platform access
+                      No credit card required • Full platform access
                     </motion.p>
                   </motion.div>
                 </div>
@@ -624,12 +624,6 @@ export default function Home() {
           </TabsContent>
         </AnimatePresence>
       </Tabs>
-
-      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-        <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white">
-          Start Your Journey
-        </Button>
-      </motion.div>
 
       <SocialMedia />
     </div>
