@@ -1,16 +1,16 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useCallback, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Upload, Video, X,  ExternalLink, Loader2 } from "lucide-react"
+import { Upload, Video, X, ExternalLink, Loader2 } from "lucide-react"
 import { extractVideoMetadata } from "@/lib/video-metadata"
 import type { VideoFile } from "@/types/video"
 import Link from "next/link"
+import { useToast } from "@/hooks/use-toast"
 
 interface VideoUploadProps {
   onVideosUploaded: (videos: VideoFile[]) => void
@@ -23,6 +23,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
   const [isDragging, setIsDragging] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isProcessingUrl, setIsProcessingUrl] = useState(false)
+  const { toast } = useToast()
 
   const isValidVideoFile = (file: File): boolean => {
     const validTypes = ["video/mp4", "video/mov", "video/avi", "video/quicktime", "video/x-msvideo"]
@@ -33,12 +34,19 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
     const fileArray = Array.from(files)
     const validFiles = fileArray.filter((file) => {
       if (!isValidVideoFile(file)) {
-        alert(`${file.name} is not a supported video format. Please use MP4, MOV, or AVI files.`)
+        toast({
+          title: "Invalid File Format",
+          description: `${file.name} is not a supported video format. Please use MP4, MOV, or AVI files.`,
+          variant: "destructive",
+        })
         return false
       }
       if (file.size > 100 * 1024 * 1024) {
-        // 100MB limit
-        alert(`${file.name} is too large. Please use files under 100MB.`)
+        toast({
+          title: "File Too Large",
+          description: `${file.name} is too large. Please use files under 100MB.`,
+          variant: "destructive",
+        })
         return false
       }
       return true
@@ -47,10 +55,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
     const newVideos: VideoFile[] = []
 
     for (const file of validFiles) {
-      // Create object URL for video preview
       const videoUrl = URL.createObjectURL(file)
-
-      // Create video element to get duration
       const video = document.createElement("video")
       video.preload = "metadata"
 
@@ -59,7 +64,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
           resolve(Math.floor(video.duration))
         }
         video.onerror = () => {
-          resolve(60) // Default duration if can't read metadata
+          resolve(60)
         }
         video.src = videoUrl
       })
@@ -96,26 +101,44 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
       const metadata = await extractVideoMetadata(url)
       console.log('metadata', metadata)
 
-      if (metadata) {
-        const newVideo: VideoFile = {
-          id: Date.now().toString(),
-          name: metadata.title,
-          url: url,
-          thumbnail: metadata.thumbnail || "/video-thumbnail.png",
-          duration: metadata.duration,
-          transcription: "Processing transcription...",
-          keyInsights: ["Video analysis pending"],
-          platform: metadata.platform,
-          author: metadata.author,
-        }
-        onVideosUploaded([...uploadedVideos, newVideo])
-        setUrl("")
-      } else {
-        alert("Invalid video URL. Please try again.")
+      if (!metadata) {
+        toast({
+          title: "Invalid URL",
+          description: "Invalid video URL. Please try again with a valid TikTok or YouTube URL.",
+          variant: "destructive",
+        })
+        return
       }
+
+      if (metadata.duration > 60) {
+        toast({
+          title: "Invalid URL",
+          description: "Video too long duration must be within 1 minute.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      const newVideo: VideoFile = {
+        id: Date.now().toString(),
+        name: metadata.title,
+        url: url,
+        thumbnail: metadata.thumbnail || "/video-thumbnail.png",
+        duration: metadata.duration,
+        transcription: "Processing transcription...",
+        keyInsights: ["Video analysis pending"],
+        platform: metadata.platform,
+        author: metadata.author,
+      }
+      onVideosUploaded([...uploadedVideos, newVideo])
+      setUrl("")
     } catch (error) {
       console.error("Error processing video URL:", error)
-      alert("Failed to process video URL. Please try again.")
+      toast({
+        title: "Error",
+        description: "Failed to process video URL. Please try again.",
+        variant: "destructive",
+      })
     } finally {
       setIsProcessingUrl(false)
     }
@@ -155,17 +178,15 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
 
   return (
     <div className="space-y-6">
-      {/* Upload Area */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
-            Upload  Videos
+            Upload Videos
           </CardTitle>
-          <CardDescription>Upload video files or provide  URLs to analyze and remix content</CardDescription>
+          <CardDescription>Upload video files or provide URLs to analyze and remix content</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* File Drop Zone */}
           <div
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
               isDragging ? "border-green-500 bg-green-50" : "border-gray-300 hover:border-green-400"
@@ -202,8 +223,6 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
             className="hidden"
           />
 
-          {/*  URL Input */}
-          {/* Video URL Input */}
           <div className="space-y-2">
             <Label htmlFor="video-url">Or paste TikTok/YouTube URL</Label>
             <div className="flex gap-2">
@@ -227,7 +246,6 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
         </CardContent>
       </Card>
 
-      {/* Uploaded Videos */}
       {uploadedVideos.length > 0 && (
         <Card>
           <CardHeader>
@@ -235,7 +253,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
             <CardDescription>Videos ready for analysis and content remixing</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3  gap-4">
               {uploadedVideos.map((video) => (
                 <Link href={video.url} key={video.id} className="border rounded-lg p-4 relative hover:opacity-70 scale-100 hover:scale-105 transform transition-all">
                   <Button
@@ -264,7 +282,6 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
         </Card>
       )}
 
-      {/* Next Button */}
       <div className="flex justify-end">
         <Button onClick={onNext} disabled={uploadedVideos.length === 0} size="lg">
           Analyze Videos
