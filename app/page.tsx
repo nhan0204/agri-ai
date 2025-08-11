@@ -6,16 +6,18 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import Header from "./components/header"
-import BrandStory from "./components/brand-story"
-import Features from "./components/features"
-import HowToUse from "./components/how-to-use"
-import Testimonials from "./components/testimonials"
-import FAQ from "./components/faq"
-import CTA from "./components/cta"
-import SocialMedia from "./components/social-media"
-import AIModelsInfo from "./components/ai-models-info"
+import Header from "@/components/landing-page/header"
+import BrandStory from "@/components/landing-page/brand-story"
+import Features from "@/components/landing-page/features"
+import HowToUse from "@/components/landing-page/how-to-use"
+import Testimonials from "@/components/landing-page/testimonials"
+import FAQ from "@/components/landing-page/faq"
+import CTA from "@/components/landing-page/cta"
+import SocialMedia from "@/components/landing-page/social-media"
+import AIModelsInfo from "@/components/landing-page/ai-models-info"
 import { Sprout, Video, Users, TrendingUp, Globe, Zap, Brain, MessageSquare } from "lucide-react"
+
+import { redirect } from "next/navigation"
 
 // Animation variants with proper typing
 const fadeInUp: Variants = {
@@ -579,14 +581,18 @@ export default function Home() {
                     >
                       <motion.div variants={fadeInUp}>
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8">
+                          <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white px-8"
+                            onClick={() => redirect('/demo')}
+                          >
                             Start Now
                           </Button>
                         </motion.div>
                       </motion.div>
                       <motion.div variants={fadeInUp}>
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                          <Button size="lg" variant="outline" className="bg-transparent">
+                          <Button size="lg" variant="outline" className="bg-transparent"
+                            onClick={() => redirect('/demo')}
+                          >
                             Schedule Demo
                           </Button>
                         </motion.div>

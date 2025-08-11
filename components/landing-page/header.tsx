@@ -5,6 +5,9 @@ import { motion, AnimatePresence, type Variants } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Menu, X, Sprout, Brain } from "lucide-react"
 
+import { redirect } from "next/navigation"
+
+
 const menuItemVariants: Variants = {
   initial: { opacity: 0, x: 50 },
   animate: {
@@ -94,6 +97,7 @@ export default function Header() {
                 <Button
                   variant="outline"
                   className="border-green-800 text-green-800 hover:bg-green-800 hover:text-white bg-transparent"
+                  onClick={() => redirect('/demo')}
                 >
                   Contact Us
                 </Button>
