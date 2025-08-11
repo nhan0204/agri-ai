@@ -194,7 +194,9 @@ export default function Home() {
                       >
                         <motion.div variants={fadeInLeft}>
                           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                            <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white">
+                            <Button size="lg" className="bg-green-600 hover:bg-green-700 text-white"
+                              onClick={() => redirect('/demo')}
+                            >
                               Try Content Remix Tool
                             </Button>
                           </motion.div>
