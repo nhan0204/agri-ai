@@ -39,7 +39,7 @@ export default function ContentRemixTool() {
 
         {/* Progress Steps */}
         <div className="flex justify-center mb-8">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 overflow-x-auto">
             {steps.map((step, index) => {
               const Icon = step.icon
               const isActive = currentStep === step.id

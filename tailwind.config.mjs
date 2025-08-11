@@ -6,6 +6,11 @@ export default {
       center: true,
       padding: "2rem",
       screens: {
+        xs: "360px", // Added for mobile view
+        sm: "640px", // Default Tailwind breakpoint
+        md: "768px", // Default Tailwind breakpoint
+        lg: "1024px", // Default Tailwind breakpoint
+        xl: "1280px", // Default Tailwind breakpoint
         "2xl": "1400px",
       },
     },

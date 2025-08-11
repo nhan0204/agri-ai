@@ -94,6 +94,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
 
     try {
       const metadata = await extractVideoMetadata(url)
+      console.log('metadata', metadata)
 
       if (metadata) {
         const newVideo: VideoFile = {
@@ -110,17 +111,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
         onVideosUploaded([...uploadedVideos, newVideo])
         setUrl("")
       } else {
-        // Fallback to mock data if metadata extraction fails
-        const newVideo: VideoFile = {
-          id: Date.now().toString(),
-          name: `Video from URL`,
-          url: "/video-thumbnail.png",
-          duration: Math.floor(Math.random() * 60) + 30,
-          transcription: "Processing transcription...",
-          keyInsights: ["Video analysis pending"],
-        }
-        onVideosUploaded([...uploadedVideos, newVideo])
-        setUrl("")
+        alert("Invalid video URL. Please try again.")
       }
     } catch (error) {
       console.error("Error processing video URL:", error)
@@ -244,7 +235,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
             <CardDescription>Videos ready for analysis and content remixing</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {uploadedVideos.map((video) => (
                 <Link href={video.url} key={video.id} className="border rounded-lg p-4 relative hover:opacity-70 scale-100 hover:scale-105 transform transition-all">
                   <Button

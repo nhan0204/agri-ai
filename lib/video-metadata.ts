@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { uuid as uuidv4 } from 'uuidv4';
 
 interface VideoMetadata {
   title: string;
@@ -29,6 +30,11 @@ function getVideoInfo(url: string): VideoInfo | null {
   const youtubeMatch = url.match(youtubeRegex);
   if (youtubeMatch) {
     return { service: 'youtube', id: youtubeMatch[1] };
+  }
+
+  // For direct video URLs or unknown platforms
+  if (url.match(/\.(mp4|mov|avi|webm)$/i) || url.startsWith('http')) {
+    return { service: 'local', id: uuidv4()}
   }
 
   return null;
@@ -123,8 +129,6 @@ async function getVideoElementMetadata(url: string): Promise<VideoMetadata | nul
 // Main function to extract video metadata
 export async function extractVideoMetadata(url: string): Promise<VideoMetadata | null> {
   const videoInfo = getVideoInfo(url);
-  console.log(url);
-  console.log(videoInfo?.service);
 
   if (videoInfo) {
     switch (videoInfo.service) {
@@ -132,12 +136,11 @@ export async function extractVideoMetadata(url: string): Promise<VideoMetadata |
         return await getTikTokMetadata(videoInfo.id);
       case 'youtube':
         return await getYouTubeMetadata(videoInfo.id);
+      case 'local':
+        return await getVideoElementMetadata(url)
+      default:
+        return null;
     }
-  }
-
-  // For direct video URLs or unknown platforms
-  if (url.match(/\.(mp4|mov|avi|webm)$/i) || url.startsWith('http')) {
-    return await getVideoElementMetadata(url);
   }
 
   return null;
