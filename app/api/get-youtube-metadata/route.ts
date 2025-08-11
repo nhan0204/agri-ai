@@ -21,16 +21,39 @@ export async function GET(req: NextRequest) {
     const url = `https://www.youtube.com/watch?v=${videoId}`;
     const response = await axios.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36', // Updated to modern Chrome
+        'Accept-Language': 'en-US,en;q=0.9', // Mimics English browser
+        'Cookie': 'CONSENT=YES+1', // Bypasses consent page
       },
     });
     const $ = cheerio.load(response.data);
 
-    const title = $('meta[name="title"]').attr('content') || 'YouTube Video';
-    const thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-    const author = $('.ytd-channel-name a').text().trim() || 'Unknown Author';
-    const durationRaw = $('meta[itemprop="duration"]').attr('content') || 'PT0S';
-    const duration = parseISO8601Duration(durationRaw);
+    let title = $('meta[name="title"]').attr('content') || 'YouTube Video';
+    let thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    let author = $('.ytd-channel-name a').text().trim() || 'Unknown Author';
+    let durationRaw = $('meta[itemprop="duration"]').attr('content') || 'PT0S';
+    let duration = parseISO8601Duration(durationRaw);
+
+    // If defaults, try JSON parse
+    if (duration === 0 || author === 'Unknown Author' || title === 'YouTube Video') {
+      const scripts = $('script');
+      let playerResponse: any = null;
+      scripts.each((i, elem) => {
+        const text = $(elem).html();
+        if (text && text.includes('ytInitialPlayerResponse')) {
+          const match = text.match(/var ytInitialPlayerResponse = ({[\s\S]*?});/);
+          if (match && match[1]) {
+            playerResponse = JSON.parse(match[1]);
+          }
+        }
+      });
+
+      if (playerResponse && playerResponse.videoDetails) {
+        title = playerResponse.videoDetails.title || title;
+        author = playerResponse.videoDetails.author || author;
+        duration = parseInt(playerResponse.videoDetails.lengthSeconds, 10) || duration;
+      }
+    }
 
     const metadata: VideoMetadata = {
       title,
