@@ -3,6 +3,7 @@ export type VideoFile = {
   id: string
   name: string
   url: string
+  thumbnail?: string
   duration: number
   transcription?: string
   keyInsights?: string[]

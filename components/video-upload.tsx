@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Upload, Video, X,  ExternalLink, Loader2 } from "lucide-react"
 import { extractVideoMetadata } from "@/lib/video-metadata"
 import type { VideoFile } from "@/types/video"
+import Link from "next/link"
 
 interface VideoUploadProps {
   onVideosUploaded: (videos: VideoFile[]) => void
@@ -98,7 +99,8 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
         const newVideo: VideoFile = {
           id: Date.now().toString(),
           name: metadata.title,
-          url: metadata.thumbnail || "/video-thumbnail.png",
+          url: url,
+          thumbnail: metadata.thumbnail || "/video-thumbnail.png",
           duration: metadata.duration,
           transcription: "Processing transcription...",
           keyInsights: ["Video analysis pending"],
@@ -242,9 +244,9 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
             <CardDescription>Videos ready for analysis and content remixing</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {uploadedVideos.map((video) => (
-                <div key={video.id} className="border rounded-lg p-4 relative">
+                <Link href={video.url} key={video.id} className="border rounded-lg p-4 relative hover:opacity-70 scale-100 hover:scale-105 transform transition-all">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -257,14 +259,14 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
                     <video src={video.url} className="w-full h-32 object-cover rounded mb-3" controls={false} muted />
                   ) : (
                     <img
-                      src={video.url || "/placeholder.svg"}
+                      src={video.thumbnail || "/placeholder.svg"}
                       alt={video.name}
                       className="w-full h-32 object-cover rounded mb-3"
                     />
                   )}
                   <h4 className="font-medium text-sm mb-1">{video.name}</h4>
                   <p className="text-xs text-gray-500">{video.duration}s duration</p>
-                </div>
+                </Link>
               ))}
             </div>
           </CardContent>
