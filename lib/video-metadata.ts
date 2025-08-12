@@ -1,22 +1,24 @@
+import { Language } from '@/types/video';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { v4 as uuidv4 } from 'uuid';
+
 
 interface VideoMetadata {
   title: string;
   thumbnail: string;
   duration: number;
-  author?: string;
   platform?: string;
+  language: Language;
 }
 
-interface VideoInfo {
+export interface VideoInfo {
   service: string;
   id: string;
 }
 
 // Simple video ID extraction
-function getVideoInfo(url: string): VideoInfo | null {
+export function getVideoInfo(url: string): VideoInfo | null {
   // TikTok URL patterns
   const tiktokRegex = /(?:https?:\/\/)?(?:www\.)?(?:vm\.)?tiktok\.com\/(?:@[\w.-]+\/video\/|v\/)?(\d+)/;
   const tiktokMatch = url.match(tiktokRegex);
@@ -52,11 +54,28 @@ async function getTikTokMetadata(videoId: string): Promise<VideoMetadata | null>
 
     const data = await response.json();
 
+    console.log("Tiktok metadata: ", data)
+
+    if (!data) {
+      throw new Error('Failed to fetch TikTok metadata');
+    }
+
+    const languageDetection = await fetch('api/language', {
+      method: "POST",
+      body: JSON.stringify({ title: data.title })
+    })
+
+    if (!languageDetection) {
+      throw new Error('Failed to fetch tiktok language metadata');
+    }
+
+    const language: Language = (await languageDetection.json()).language
+
     return {
       title: data.title || 'TikTok Video',
+      language: language,
       thumbnail: data.thumbnail_url || '',
       duration: 60, // TikTok oEmbed doesn't provide duration, default to 60s
-      author: data.author_name || '',
       platform: 'TikTok',
     };
   } catch (error) {
@@ -68,12 +87,32 @@ async function getTikTokMetadata(videoId: string): Promise<VideoMetadata | null>
 // YouTube metadata via scraping (no API key)
 async function getYouTubeMetadata(videoId: string): Promise<VideoMetadata | null> {
   try {
-    const response = await fetch(`/api/get-youtube-metadata?videoId=${videoId}`);
+    const response = await fetch(`/api/metadata?videoId=${videoId}`);
     if (!response.ok) {
       throw new Error('Failed to fetch YouTube metadata from API');
     }
+
     const data = await response.json();
-    return data;
+
+    if (!data) {
+      throw new Error('Failed to fetch Youtube metadata');
+    }
+
+    const languageDetection = await fetch('api/language', {
+      method: "POST",
+      body: JSON.stringify({ title: data.title })
+    })
+
+    if (!languageDetection) {
+      throw new Error('Failed to fetch Youtube language metadata');
+    }
+
+    const language: Language = (await languageDetection.json()).language
+
+    return {
+      ...data,
+      language: language,
+    };
   } catch (error) {
     console.error('Error fetching YouTube metadata:', error);
     return null;
@@ -103,6 +142,7 @@ async function getVideoElementMetadata(url: string): Promise<VideoMetadata | nul
 
           resolve({
             title: 'Video File',
+            language: 'en',
             thumbnail,
             duration: Math.floor(video.duration),
             platform: 'Direct URL',
@@ -111,6 +151,7 @@ async function getVideoElementMetadata(url: string): Promise<VideoMetadata | nul
       } else {
         resolve({
           title: 'Video File',
+          language: 'en',
           thumbnail: '',
           duration: Math.floor(video.duration),
           platform: 'Direct URL',

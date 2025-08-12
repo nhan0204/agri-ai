@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { FileText, Lightbulb, ArrowLeft, Loader2, CheckCircle } from "lucide-react"
 import type { VideoFile } from "@/types/video"
-import { transcribeVideoFromUrl, extractAgriculturalInsights } from "@/lib/video-transcript"
+import { transcribeVideoFromUrl, extractAgriculturalInsights, TranscriptionOptions } from "@/lib/video-transcript"
+import { language } from "@elevenlabs/elevenlabs-js/api/resources/dubbing/resources/resource"
 
 interface TranscriptionResultsProps {
   videos: VideoFile[]
@@ -55,8 +56,15 @@ export function TranscriptionResults({
       processedUrlsRef.current.add(video.url)
 
       try {
-        console.log(`Processing video: ${video.url}`)
-        const transcriptionResult = await transcribeVideoFromUrl(video.url)
+        console.log(`Processing video: ${video.url} - language: ${video.language}`)
+        
+        const options: TranscriptionOptions = {
+          language: video.language,
+          mode: "native",
+          text: true,
+        }
+
+        const transcriptionResult = await transcribeVideoFromUrl(video.url, options)
         const keyInsights = extractAgriculturalInsights(transcriptionResult.text)
 
         const processedVideo = {

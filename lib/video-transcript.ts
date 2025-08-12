@@ -1,3 +1,5 @@
+import { getVideoInfo } from './video-metadata';
+
 const transcriptionPromises = new Map<string, Promise<TranscriptionResult>>();
 
 export interface TranscriptionResult {
@@ -42,23 +44,30 @@ export async function transcribeVideoFromUrl(
       const isExternalUrl = videoUrl.startsWith("http") && !videoUrl.includes(window.location.hostname);
 
       if (isExternalUrl) {
-        console.log("External URL detected, using Supadata API");
+        console.log("External url detected");
 
-        const response = await fetch("/api/external-transcribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            videoUrl,
-            options,
-          }),
-        });
+        const videoInfo = getVideoInfo(videoUrl)!
 
-        if (!response.ok) {
-          throw new Error(`API request failed: ${response.status}`);
+        if (!videoInfo) {
+          throw new Error(`Invalid video`);
         }
 
+        const { service, id } = videoInfo;
+        
+        if (service !== 'youtube') {
+          throw new Error(`Unsupported platform`);
+        }
+
+        console.log(`Platform ${service} - ${id}`)
+
+        const response = await fetch(`api/whisper?id=${id}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        })
+
         const result = await response.json();
-        console.log("Supadata transcription successful");
+
+        console.log("Whisper transcription successful: ", result);
         return result;
       } else {
         // For local files, use mock transcription

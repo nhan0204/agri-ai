@@ -74,6 +74,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
         name: file.name,
         url: videoUrl,
         duration: duration,
+        language: 'en',
         transcription: "Processing transcription...",
         keyInsights: ["Video analysis pending"],
       }
@@ -128,7 +129,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
         transcription: "Processing transcription...",
         keyInsights: ["Video analysis pending"],
         platform: metadata.platform,
-        author: metadata.author,
+        language: metadata.language,
       }
       onVideosUploaded([...uploadedVideos, newVideo])
       setUrl("")

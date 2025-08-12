@@ -7,8 +7,8 @@ export type VideoFile = {
   duration: number
   transcription?: string
   keyInsights?: string[]
-  platform?: string
-  author?: string
+  platform?: string,
+  language: Language,
 }
 
 export type GeneratedScript = {
@@ -18,3 +18,5 @@ export type GeneratedScript = {
   targetAudience: string
   language: string
 }
+
+export type Language = 'en' | 'es' | 'fr' | 'de' | 'it' | 'pt' | 'ru' | 'ja' | 'ko' | 'zh' | 'hi' | 'ar' | 'th' | 'vi' | 'id' | 'ms' | 'tl';
