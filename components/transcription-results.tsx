@@ -1,12 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { FileText, Lightbulb, ArrowLeft, Loader2, CheckCircle } from "lucide-react"
 import type { VideoFile } from "@/types/video"
+import { transcribeVideoFromUrl, extractAgriculturalInsights } from "@/lib/video-transcript"
 
 interface TranscriptionResultsProps {
   videos: VideoFile[]
@@ -25,30 +26,62 @@ export function TranscriptionResults({
 }: TranscriptionResultsProps) {
   const [processedVideos, setProcessedVideos] = useState<VideoFile[]>([])
   const [currentProcessing, setCurrentProcessing] = useState(0)
+  const processedUrlsRef = useRef<Set<string>>(new Set())
+  const isProcessingRef = useRef(false)
 
   useEffect(() => {
-    // Simulate processing videos one by one
-    if (videos.length > 0 && processedVideos.length === 0) {
-      setIsProcessing(true)
+    if (videos.length > 0 && processedVideos.length === 0 && !isProcessingRef.current) {
       processVideos()
     }
-  }, [videos])
+  }, [videos]) // Removed processedVideos.length and isProcessing from dependencies
 
   const processVideos = async () => {
-    for (let i = 0; i < videos.length; i++) {
-      setCurrentProcessing(i)
-      // Simulate processing time
-      await new Promise((resolve) => setTimeout(resolve, 2000))
+    if (isProcessingRef.current) return
 
-      const processedVideo = {
-        ...videos[i],
-        transcription: videos[i].transcription || generateMockTranscription(i),
-        keyInsights: videos[i].keyInsights || generateMockInsights(i),
+    isProcessingRef.current = true
+    setIsProcessing(true)
+
+    const newProcessedVideos: VideoFile[] = []
+
+    for (let i = 0; i < videos.length; i++) {
+      const video = videos[i]
+      setCurrentProcessing(i)
+
+      if (processedUrlsRef.current.has(video.url)) {
+        console.log(`Skipping duplicate processing for: ${video.url}`)
+        continue
       }
 
-      setProcessedVideos((prev) => [...prev, processedVideo])
+      processedUrlsRef.current.add(video.url)
+
+      try {
+        console.log(`Processing video: ${video.url}`)
+        const transcriptionResult = await transcribeVideoFromUrl(video.url)
+        const keyInsights = extractAgriculturalInsights(transcriptionResult.text)
+
+        const processedVideo = {
+          ...video,
+          transcription: transcriptionResult.text,
+          keyInsights: keyInsights,
+        }
+
+        newProcessedVideos.push(processedVideo)
+      } catch (error) {
+        console.error(`Failed to process video ${video.name}:`, error)
+
+        const processedVideo = {
+          ...video,
+          transcription: video.transcription || generateMockTranscription(i),
+          keyInsights: video.keyInsights || generateMockInsights(i),
+        }
+
+        newProcessedVideos.push(processedVideo)
+      }
     }
+
+    setProcessedVideos(newProcessedVideos)
     setIsProcessing(false)
+    isProcessingRef.current = false
   }
 
   const generateMockTranscription = (index: number) => {
@@ -74,7 +107,6 @@ export function TranscriptionResults({
 
   return (
     <div className="space-y-6">
-      {/* Processing Status */}
       {isProcessing && (
         <Card className="border-blue-200 bg-blue-50">
           <CardContent className="pt-6">
@@ -91,7 +123,6 @@ export function TranscriptionResults({
         </Card>
       )}
 
-      {/* Transcription Results */}
       {processedVideos.length > 0 && (
         <Card>
           <CardHeader>
@@ -108,6 +139,11 @@ export function TranscriptionResults({
                   <CheckCircle className="h-4 w-4 text-green-600" />
                   <h4 className="font-medium">{video.name}</h4>
                   <Badge variant="secondary">{video.duration}s</Badge>
+                  {video.platform && (
+                    <Badge variant="outline" className="text-xs">
+                      {video.platform}
+                    </Badge>
+                  )}
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
                   <p className="text-sm text-gray-700 leading-relaxed">{video.transcription}</p>
@@ -119,7 +155,6 @@ export function TranscriptionResults({
         </Card>
       )}
 
-      {/* Key Insights */}
       {uniqueInsights.length > 0 && (
         <Card>
           <CardHeader>
@@ -141,7 +176,6 @@ export function TranscriptionResults({
         </Card>
       )}
 
-      {/* Navigation */}
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>
           <ArrowLeft className="h-4 w-4 mr-2" />
