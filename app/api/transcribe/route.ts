@@ -3,7 +3,7 @@ import { promises as fs } from "fs"
 import path from "path"
 import { tmpdir } from "os"
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js"
-import { extractAgriculturalInsights } from "@/lib/extract-insights"
+import { extractAgriculturalInsights } from "@/lib/video-transcript"
 
 export async function POST(request: NextRequest) {
   try {

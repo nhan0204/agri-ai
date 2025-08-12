@@ -3,9 +3,9 @@ import { Supadata } from "@supadata/js"
 import { extractAgriculturalInsights } from "@/lib/video-transcript"
 
 export async function POST(request: NextRequest) {
-  try {
-    const { videoUrl, options = {} } = await request.json()
+  const { videoUrl, options = {} } = await request.json()
 
+  try {
     if (!process.env.SUPADATA_API_KEY) {
       return NextResponse.json({ error: "Supadata API key not configured" }, { status: 500 })
     }
@@ -29,8 +29,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(result)
   } catch (error: any) {
     console.error("Supadata transcription error:", error)
-
-    const videoUrl = "mock-video-url" // Declare videoUrl variable here
 
     if (error.message?.includes("Limit Exceeded") || error.message?.includes("limit-exceeded")) {
       console.log("API limit exceeded, returning mock transcription for:", videoUrl)
