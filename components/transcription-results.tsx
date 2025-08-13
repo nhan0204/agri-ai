@@ -33,19 +33,21 @@ export function TranscriptionResults({
   const processedUrlsRef = useRef<Set<string>>(new Set())
   const isProcessingRef = useRef(false)
 
+  const getUnprocessedVideos = () => videos.filter(
+    (video) => !processedUrlsRef.current.has(video.url) && !processedVideos.some((pv) => pv.url === video.url),
+  )
+
   const shouldProcessVideos = useMemo(() => {
     if (videos.length === 0 || isProcessingRef.current) return false
 
     // Check if any videos need processing (not already processed)
-    const unprocessedVideos = videos.filter(
-      (video) => !processedUrlsRef.current.has(video.url) && !processedVideos.some((pv) => pv.url === video.url),
-    )
+    const unprocessedVideos = getUnprocessedVideos()
 
     return unprocessedVideos.length > 0
   }, [videos, processedVideos])
 
   useEffect(() => {
-    if (videos.length > 0 && processedVideos.length === 0 && !isProcessingRef.current) {
+    if (shouldProcessVideos) {
       processVideos()
     }
   }, [shouldProcessVideos])
@@ -56,16 +58,15 @@ export function TranscriptionResults({
     isProcessingRef.current = true
     setIsProcessing(true)
 
-    const newProcessedVideos: VideoFile[] = []
+    const unprocessedVideos = getUnprocessedVideos()
 
-    for (let i = 0; i < videos.length; i++) {
-      const video = videos[i]
-      setCurrentProcessing(i)
+    console.log(`Processing ${unprocessedVideos.length} unprocessed videos`)
 
-      if (processedUrlsRef.current.has(video.url)) {
-        console.log(`Skipping duplicate processing for: ${video.url}`)
-        continue
-      }
+    const newProcessedVideos: VideoFile[] = [...processedVideos]
+
+    for (let i = 0; i < unprocessedVideos.length; i++) {
+      const video = unprocessedVideos[i]
+      setCurrentProcessing(processedVideos.length + i + 1)
 
       processedUrlsRef.current.add(video.url)
 
@@ -86,8 +87,8 @@ export function TranscriptionResults({
 
         const processedVideo = {
           ...video,
-          transcription: video.transcription || generateMockTranscription(i),
-          keyInsights: video.keyInsights || generateMockInsights(i),
+          transcription: video.transcription || generateMockTranscription(processedVideos.length + i),
+          keyInsights: video.keyInsights || generateMockInsights(processedVideos.length + i),
         }
 
         newProcessedVideos.push(processedVideo)
@@ -126,7 +127,7 @@ export function TranscriptionResults({
               <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
               <div>
                 <p className="font-medium text-blue-900">
-                  Processing video {currentProcessing + 1} of {videos.length}
+                  Processing video {currentProcessing} of {videos.length}
                 </p>
                 <p className="text-sm text-blue-700">Transcribing audio and extracting key insights...</p>
               </div>

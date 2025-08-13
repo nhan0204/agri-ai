@@ -9,6 +9,7 @@ export type VideoFile = {
   keyInsights?: string[]
   platform?: string,
   language: Language,
+  transcription?: string,
 }
 
 export type GeneratedScript = {

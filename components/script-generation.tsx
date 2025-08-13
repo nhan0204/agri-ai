@@ -40,6 +40,8 @@ export function ScriptGeneration({
       const allInsights = videos.flatMap((video) => video.keyInsights || [])
       const allTranscriptions = videos.map((video) => video.transcription || "").join(" ")
 
+      console.log("All transcriptions: ", allTranscriptions)
+
       const script = await generateScript({
         insights: allInsights,
         transcriptions: allTranscriptions,

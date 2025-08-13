@@ -98,6 +98,19 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
 
     setIsProcessingUrl(true)
 
+    const duplicate = uploadedVideos.find((video) => video.url === url)
+
+    if (duplicate) {
+      toast({
+        title: "Duplicate URL",
+        description: "Video already uploaded.",
+        variant: "destructive",
+      })
+
+      setIsProcessingUrl(false)
+      return
+    }
+
     try {
       const metadata = await extractVideoMetadata(url)
       console.log('metadata', metadata)
