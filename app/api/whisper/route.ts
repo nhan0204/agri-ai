@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { openai } from "@ai-sdk/openai";
-import { experimental_transcribe as transcribe } from "ai";
-import { extractAgriculturalInsights } from "@/lib/video-transcript";
+import { generateText, experimental_transcribe as transcribe } from "ai";
+import { extractAgriculturalInsights } from "@/lib/extract-insights";
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,9 +12,19 @@ export async function GET(req: NextRequest) {
     }
 
     const id = req.nextUrl.searchParams.get('id');
+    const lang = req.nextUrl.searchParams.get('lang') || 'en';
     
-    if (!id) {
+    if (!id ) {
       return NextResponse.json({ error: 'Missing id' }, { status: 400 });
+    }
+    
+    // Validate language code (basic ISO-639-1 check)
+    const validLang = /^[a-z]{2}$/.test(lang);
+    if (!validLang) {
+      return NextResponse.json(
+        { error: 'Invalid language code. Must be in ISO-639-1 format (e.g., "en")' },
+        { status: 400 }
+      );
     }
 
     const mp3Url = `https://youtube-mp3-audio-video-downloader.p.rapidapi.com/download-mp3/${id}?quality=low`;
@@ -41,9 +51,18 @@ export async function GET(req: NextRequest) {
         openai: {
           response_format: "verbose_json",
           timestamp_granularities: ["segment"],
+          language: lang || 'en'
         },
       },
     });
+
+    const translation = await generateText({
+      model: openai.languageModel('gpt-4.1-mini'),
+      system: 'You are an  South East Asia linguist.' +
+              'You understand Thai, Lao, Cambodian, Vietnamese, Malaysian' +
+              'You must return the translation only and no excessive words',
+      prompt: `Translate this transcript into English ${transcription.text}`
+    })
 
     const fullText = transcription.text || "";
     const segments =
@@ -53,17 +72,15 @@ export async function GET(req: NextRequest) {
         text: seg.text || "",
       })) || [{ start: 0, end: 30, text: fullText }];
 
-    const language = transcription.language || "en";
     const duration =
       transcription.durationInSeconds ||
       (segments.length > 0 ? Math.max(...segments.map((s: any) => s.end)) : 30);
 
     return NextResponse.json({
-      text: fullText,
+      text: translation.text,
       segments,
-      language,
+      language: lang,
       duration,
-      keyInsights: extractAgriculturalInsights(fullText),
     });
 
   } catch (err: any) {

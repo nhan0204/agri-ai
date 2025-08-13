@@ -180,15 +180,15 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
+        {/* <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
             Upload Videos
           </CardTitle>
           <CardDescription>Upload video files or provide URLs to analyze and remix content</CardDescription>
-        </CardHeader>
+        </CardHeader> */}
         <CardContent className="space-y-4">
-          <div
+          {/* <div
             className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
               isDragging ? "border-green-500 bg-green-50" : "border-gray-300 hover:border-green-400"
             }`}
@@ -213,7 +213,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
                 Browse Files
               </Button>
             </div>
-          </div>
+          </div> */}
 
           <input
             ref={fileInputRef}
@@ -225,7 +225,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
           />
 
           <div className="space-y-2">
-            <Label htmlFor="video-url">Or paste TikTok/YouTube URL</Label>
+            <Label htmlFor="video-url">Paste TikTok/YouTube URL</Label>
             <div className="flex gap-2">
               <Input
                 id="video-url"
@@ -254,7 +254,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
             <CardDescription>Videos ready for analysis and content remixing</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3  gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3  gap-4">
               {uploadedVideos.map((video) => (
                 <Link href={video.url} key={video.id} className="border rounded-lg p-4 relative hover:opacity-70 scale-100 hover:scale-105 transform transition-all">
                   <Button

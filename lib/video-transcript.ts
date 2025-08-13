@@ -1,3 +1,4 @@
+import { Language } from '@/types/video';
 import { getVideoInfo } from './video-metadata';
 
 const transcriptionPromises = new Map<string, Promise<TranscriptionResult>>();
@@ -28,7 +29,7 @@ export interface TranscriptionOptions {
  */
 export async function transcribeVideoFromUrl(
   videoUrl: string,
-  options: TranscriptionOptions = {},
+  language: Language,
 ): Promise<TranscriptionResult> {
   // Check cache first
   if (transcriptionPromises.has(videoUrl)) {
@@ -43,36 +44,52 @@ export async function transcribeVideoFromUrl(
       // Check if this is an external URL
       const isExternalUrl = videoUrl.startsWith("http") && !videoUrl.includes(window.location.hostname);
 
-      if (isExternalUrl) {
-        console.log("External url detected");
-
-        const videoInfo = getVideoInfo(videoUrl)!
-
-        if (!videoInfo) {
-          throw new Error(`Invalid video`);
-        }
-
-        const { service, id } = videoInfo;
-        
-        if (service !== 'youtube') {
-          throw new Error(`Unsupported platform`);
-        }
-
-        console.log(`Platform ${service} - ${id}`)
-
-        const response = await fetch(`api/whisper?id=${id}`, {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        })
-
-        const result = await response.json();
-
-        console.log("Whisper transcription successful: ", result);
-        return result;
-      } else {
+      if (!isExternalUrl) {
         // For local files, use mock transcription
         console.log("Local file detected, using mock transcription");
         return generateMockTranscription(videoUrl);
+      }
+
+      console.log("External url detected");
+
+      const videoInfo = getVideoInfo(videoUrl)!
+
+      if (!videoInfo) {
+        throw new Error(`Invalid video`);
+      }
+
+      const { service, id } = videoInfo;
+      
+      console.log(`Platform ${service} - ${id}`)
+      
+      switch (service) {
+        case 'youtube':
+          const youtubResponse = await fetch(`api/whisper?id=${id}&lang=${language}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          })
+
+          if (!youtubResponse.ok) return null;
+
+          const youtubeTranscript = await youtubResponse.json();
+
+          console.log("Whisper transcription successful: ", youtubeTranscript);
+          return youtubeTranscript;
+      
+        case 'tiktok':
+          videoUrl = videoUrl.split('?')[0]
+
+          const tiktokResponse = await fetch('api/tiktok', {
+            method: "POST",
+            body: JSON.stringify({videoUrl})
+          })
+
+          if (!tiktokResponse.ok) return null;
+
+          const tiktokTranscript = await tiktokResponse.json();
+
+          console.log("Tiktok transcription successful: ", tiktokTranscript);
+          return tiktokTranscript;
       }
     } catch (error) {
       console.error("Video transcription failed:", error);
@@ -146,58 +163,4 @@ function generateMockTranscription(videoUrl: string): TranscriptionResult {
     language: "en",
     duration: 30,
   }
-}
-
-export function extractAgriculturalInsights(transcription: string): string[] {
-  const agriculturalKeywords = [
-    "disease identification",
-    "pest control",
-    "organic farming",
-    "crop protection",
-    "fertilizer application",
-    "irrigation",
-    "harvest timing",
-    "soil preparation",
-    "seed treatment",
-    "weather monitoring",
-    "yield optimization",
-    "plant nutrition",
-    "integrated pest management",
-    "sustainable agriculture",
-    "crop rotation",
-    "water management",
-    "soil health",
-    "precision farming",
-  ]
-
-  const insights: string[] = []
-  const lowerText = transcription.toLowerCase()
-
-  agriculturalKeywords.forEach((keyword) => {
-    if (lowerText.includes(keyword.toLowerCase())) {
-      insights.push(keyword)
-    }
-  })
-
-  if (lowerText.includes("spray") || lowerText.includes("pesticide") || lowerText.includes("insecticide")) {
-    insights.push("Application techniques")
-  }
-
-  if (lowerText.includes("disease") || lowerText.includes("fungus") || lowerText.includes("blight")) {
-    insights.push("Disease management")
-  }
-
-  if (lowerText.includes("organic") || lowerText.includes("natural") || lowerText.includes("bio")) {
-    insights.push("Organic methods")
-  }
-
-  if (lowerText.includes("timing") || lowerText.includes("season") || lowerText.includes("schedule")) {
-    insights.push("Timing optimization")
-  }
-
-  if (lowerText.includes("yield") || lowerText.includes("production") || lowerText.includes("harvest")) {
-    insights.push("Yield enhancement")
-  }
-
-  return [...new Set(insights)].slice(0, 8)
 }

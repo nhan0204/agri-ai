@@ -3,7 +3,6 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { v4 as uuidv4 } from 'uuid';
 
-
 interface VideoMetadata {
   title: string;
   thumbnail: string;

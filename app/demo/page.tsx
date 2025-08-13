@@ -1,20 +1,24 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { VideoUpload } from "@/components/video-upload"
 import { TranscriptionResults } from "@/components/transcription-results"
-import { ScriptGeneration } from "@/components/script-generator"
+import { ScriptGeneration } from "@/components/script-generation"
 import { VoiceoverPreview } from "@/components/voiceover-preview"
 import { Badge } from "@/components/ui/badge"
 import { Leaf, Video, Mic, Sparkles } from "lucide-react"
-import { VideoFile, GeneratedScript} from "@/types/video"
-import Link from "next/link"
+import type { VideoFile, GeneratedScript } from "@/types/video"
 
 export default function ContentRemixTool() {
   const [currentStep, setCurrentStep] = useState(1)
   const [uploadedVideos, setUploadedVideos] = useState<VideoFile[]>([])
+  const [processedVideos, setProcessedVideos] = useState<VideoFile[]>([])
   const [generatedScript, setGeneratedScript] = useState<GeneratedScript | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+
+  const memoizedProcessedVideos = useMemo(() => {
+    return processedVideos.filter((video) => video.transcription && video.keyInsights)
+  }, [processedVideos])
 
   const steps = [
     { id: 1, title: "Upload Videos", icon: Video, description: "Upload TikTok videos for analysis" },
@@ -24,10 +28,10 @@ export default function ContentRemixTool() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <Link href="/" className="text-center mb-8">
+        <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Leaf className="h-8 w-8 text-green-600" />
             <h1 className="text-3xl font-bold text-gray-900">AgriContent AI</h1>
@@ -35,11 +39,11 @@ export default function ContentRemixTool() {
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             AI-powered tool to remix and localize agricultural content for Southeast Asian farmers
           </p>
-        </Link>
+        </div>
 
         {/* Progress Steps */}
         <div className="flex justify-center mb-8">
-          <div className="flex items-center space-x-4 overflow-x-auto">
+          <div className="flex items-center space-x-4">
             {steps.map((step, index) => {
               const Icon = step.icon
               const isActive = currentStep === step.id
@@ -88,6 +92,8 @@ export default function ContentRemixTool() {
           {currentStep === 2 && (
             <TranscriptionResults
               videos={uploadedVideos}
+              processedVideos={processedVideos}
+              setProcessedVideos={setProcessedVideos}
               onNext={() => setCurrentStep(3)}
               onBack={() => setCurrentStep(1)}
               setIsProcessing={setIsProcessing}
@@ -97,7 +103,7 @@ export default function ContentRemixTool() {
 
           {currentStep === 3 && (
             <ScriptGeneration
-              videos={uploadedVideos}
+              videos={memoizedProcessedVideos}
               onScriptGenerated={setGeneratedScript}
               onNext={() => setCurrentStep(4)}
               onBack={() => setCurrentStep(2)}

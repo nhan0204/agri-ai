@@ -1,17 +1,19 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { FileText, Lightbulb, ArrowLeft, Loader2, CheckCircle } from "lucide-react"
 import type { VideoFile } from "@/types/video"
-import { transcribeVideoFromUrl, extractAgriculturalInsights, TranscriptionOptions } from "@/lib/video-transcript"
-import { language } from "@elevenlabs/elevenlabs-js/api/resources/dubbing/resources/resource"
+import { transcribeVideoFromUrl } from "@/lib/video-transcript"
+import { extractAgriculturalInsights } from "@/lib/extract-insights"
 
 interface TranscriptionResultsProps {
   videos: VideoFile[]
+  processedVideos: VideoFile[]
+  setProcessedVideos: (videos: VideoFile[]) => void
   onNext: () => void
   onBack: () => void
   setIsProcessing: (processing: boolean) => void
@@ -20,21 +22,33 @@ interface TranscriptionResultsProps {
 
 export function TranscriptionResults({
   videos,
+  processedVideos,
+  setProcessedVideos,
   onNext,
   onBack,
   setIsProcessing,
   isProcessing,
 }: TranscriptionResultsProps) {
-  const [processedVideos, setProcessedVideos] = useState<VideoFile[]>([])
   const [currentProcessing, setCurrentProcessing] = useState(0)
   const processedUrlsRef = useRef<Set<string>>(new Set())
   const isProcessingRef = useRef(false)
+
+  const shouldProcessVideos = useMemo(() => {
+    if (videos.length === 0 || isProcessingRef.current) return false
+
+    // Check if any videos need processing (not already processed)
+    const unprocessedVideos = videos.filter(
+      (video) => !processedUrlsRef.current.has(video.url) && !processedVideos.some((pv) => pv.url === video.url),
+    )
+
+    return unprocessedVideos.length > 0
+  }, [videos, processedVideos])
 
   useEffect(() => {
     if (videos.length > 0 && processedVideos.length === 0 && !isProcessingRef.current) {
       processVideos()
     }
-  }, [videos]) // Removed processedVideos.length and isProcessing from dependencies
+  }, [shouldProcessVideos])
 
   const processVideos = async () => {
     if (isProcessingRef.current) return
@@ -56,16 +70,9 @@ export function TranscriptionResults({
       processedUrlsRef.current.add(video.url)
 
       try {
-        console.log(`Processing video: ${video.url} - language: ${video.language}`)
-        
-        const options: TranscriptionOptions = {
-          language: video.language,
-          mode: "native",
-          text: true,
-        }
-
-        const transcriptionResult = await transcribeVideoFromUrl(video.url, options)
-        const keyInsights = extractAgriculturalInsights(transcriptionResult.text)
+        console.log(`Processing video: ${video.url}`)
+        const transcriptionResult = await transcribeVideoFromUrl(video.url, video.language)
+        const keyInsights = await extractAgriculturalInsights(transcriptionResult.text)
 
         const processedVideo = {
           ...video,
@@ -110,9 +117,6 @@ export function TranscriptionResults({
     return insights[index % insights.length]
   }
 
-  const allInsights = processedVideos.flatMap((video) => video.keyInsights || [])
-  const uniqueInsights = [...new Set(allInsights)]
-
   return (
     <div className="space-y-6">
       {isProcessing && (
@@ -156,30 +160,26 @@ export function TranscriptionResults({
                 <div className="bg-gray-50 rounded-lg p-4">
                   <p className="text-sm text-gray-700 leading-relaxed">{video.transcription}</p>
                 </div>
+
+                {video.keyInsights && video.keyInsights.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Lightbulb className="h-4 w-4 text-amber-600" />
+                      <span className="text-sm font-medium text-gray-900">Key Insights</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {video.keyInsights.map((insight, insightIndex) => (
+                        <Badge key={insightIndex} variant="outline" className="text-xs">
+                          {insight}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {index < processedVideos.length - 1 && <Separator />}
               </div>
             ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {uniqueInsights.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lightbulb className="h-5 w-5" />
-              Extracted Key Insights
-            </CardTitle>
-            <CardDescription>Important topics and themes identified across all videos</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {uniqueInsights.map((insight, index) => (
-                <Badge key={index} variant="outline" className="text-sm">
-                  {insight}
-                </Badge>
-              ))}
-            </div>
           </CardContent>
         </Card>
       )}
