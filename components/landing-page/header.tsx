@@ -93,14 +93,14 @@ export default function Header() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4, ease: [0.6, -0.05, 0.01, 0.99] }}
             >
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              {/* <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Button
                   variant="outline"
                   className="border-green-800 text-green-800 hover:bg-green-800 hover:text-white bg-transparent"
                 >
                   Contact Us
                 </Button>
-              </motion.div>
+              </motion.div> */}
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 <Button onClick={() => redirect('/demo')} className="bg-blue-600 hover:bg-blue-700 text-white">Try AI Platform</Button>
               </motion.div>

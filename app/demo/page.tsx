@@ -8,6 +8,7 @@ import { VoiceoverPreview } from "@/components/voiceover-preview"
 import { Badge } from "@/components/ui/badge"
 import { Leaf, Video, Mic, Sparkles } from "lucide-react"
 import type { VideoFile, GeneratedScript } from "@/types/video"
+import Link from "next/link"
 
 export default function ContentRemixTool() {
   const [currentStep, setCurrentStep] = useState(1)
@@ -32,10 +33,10 @@ export default function ContentRemixTool() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
+          <Link href="/" className="flex items-center justify-center gap-2 mb-4">
             <Leaf className="h-8 w-8 text-green-600" />
             <h1 className="text-3xl font-bold text-gray-900">AgriContent AI</h1>
-          </div>
+          </Link>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             AI-powered tool to remix and localize agricultural content for Southeast Asian farmers
           </p>

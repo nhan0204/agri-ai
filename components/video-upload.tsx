@@ -269,7 +269,13 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3  gap-4">
               {uploadedVideos.map((video) => (
-                <Link href={video.url} key={video.id} className="border rounded-lg p-4 relative hover:opacity-70 scale-100 hover:scale-105 transform transition-all">
+                <Link 
+                  href={video.url} 
+                  key={video.id}
+                  target="_blank"
+                  rel="noopner noreferrer" 
+                  className="border rounded-lg p-4 relative hover:opacity-70 scale-100 hover:scale-105 transform transition-all"
+                >
                   <Button
                     variant="ghost"
                     size="sm"
