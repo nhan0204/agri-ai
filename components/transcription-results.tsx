@@ -9,6 +9,7 @@ import { FileText, Lightbulb, ArrowLeft, Loader2, CheckCircle } from "lucide-rea
 import type { VideoFile } from "@/types/video"
 import { transcribeVideoFromUrl } from "@/lib/video-transcript"
 import { extractAgriculturalInsights } from "@/lib/extract-insights"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface TranscriptionResultsProps {
   videos: VideoFile[]
@@ -186,11 +187,11 @@ export function TranscriptionResults({
       )}
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" onClick={onBack} >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Upload
+          {useIsMobile() ?"" : "Back to Upload"}
         </Button>
-        <Button onClick={onNext} disabled={isProcessing || processedVideos.length === 0} size="lg">
+        <Button onClick={onNext} disabled={isProcessing || processedVideos.length === 0} size={useIsMobile() ? "default" : "lg"}>
           Generate New Script
         </Button>
       </div>

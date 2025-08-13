@@ -11,6 +11,7 @@ import { extractVideoMetadata } from "@/lib/video-metadata"
 import type { VideoFile } from "@/types/video"
 import Link from "next/link"
 import { useToast } from "@/hooks/use-toast"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface VideoUploadProps {
   onVideosUploaded: (videos: VideoFile[]) => void
@@ -303,7 +304,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
       )}
 
       <div className="flex justify-end">
-        <Button onClick={onNext} disabled={uploadedVideos.length === 0} size="lg">
+        <Button onClick={onNext} disabled={uploadedVideos.length === 0} size={useIsMobile() ? "default" : "lg"}>
           Analyze Videos
         </Button>
       </div>
