@@ -12,12 +12,12 @@ export const AVAILABLE_VOICES: VoiceOption[] = [
     language: "fil",
   },
   {
-    id: "ninh-vietnamese",
-    name: "Ninh Don",
+    id: "mai-vietnamese",
+    name: "Mai",
     accent: "Northern",
-    gender: "male" as const,
-    elevenLabsId: "aN7cv9yXNrfIR87bDmyD",
-    culturalFit: "Funny tone, male voice for entertainment and media",
+    gender: "female" as const,
+    elevenLabsId: "d5HVupAWCwe4e6GvMCAL",
+    culturalFit: "Light and bright female tone, with smooth elegant flow",
     language: "vi",
   },
   {
@@ -48,7 +48,6 @@ export async function generateSpeech(text: string, options: SpeechOptions = {}):
 
     // Find the voice configuration
     const voice = AVAILABLE_VOICES.find((v) => v.id === finalOptions.voiceId) || AVAILABLE_VOICES[0]
-    const language = finalOptions.language || voice.language
 
     // Call the API route
     const response = await fetch("/api/text-to-speech", {
@@ -61,7 +60,7 @@ export async function generateSpeech(text: string, options: SpeechOptions = {}):
         voiceId: voice.elevenLabsId,
         modelId: finalOptions.modelId,
         outputFormat: finalOptions.outputFormat,
-        languageCode: language, // Use language as languageCode for API
+        languageCode: options.language,
       }),
     })
 

@@ -1,15 +1,16 @@
-import { generateText } from "ai"
-import { openai } from "@ai-sdk/openai"
+import { GeneratedScript, Language, Region } from "@/types/video"
+
 
 interface ScriptGenerationParams {
   insights: string[]
   transcriptions: string
-  targetRegion: string
+  targetRegion: Region
   contentType: string
   customPrompt?: string
 }
 
-export async function generateScript(params: ScriptGenerationParams) {
+
+export async function generateScript(params: ScriptGenerationParams): Promise<GeneratedScript> {
   const { insights, transcriptions, targetRegion, contentType, customPrompt } = params
 
   const regionContext = {
@@ -52,17 +53,14 @@ export async function generateScript(params: ScriptGenerationParams) {
                       4. Ends with engagement question
                       NO scene descriptions. Pure voiceover text only.`
 
-  const regionLanguage = {
-    philippines: "tl", // Tagalog
+
+  const regionLanguage: Record<Region, Language> = {
+    philippines: "fil",
     vietnam: "vi",
-    thailand: "th",
-    indonesia: "id",
     malaysia: "ms",
   }
 
-  type TargetRegion = keyof typeof regionLanguage;
-
-  const language = regionLanguage[targetRegion as TargetRegion] || 'en';
+  const language: Language = regionLanguage[targetRegion];
 
   try {
     const response = await fetch("api/generate-script", {
@@ -77,8 +75,7 @@ export async function generateScript(params: ScriptGenerationParams) {
     const result = await response.json();
 
     if (!result || !result.data) {
-      console.error("Error generating script.");
-      return null;
+      throw new Error("Api/generate-script error.")
     }
 
     const script = result.data;  // Access the 'text' property from generateText result
@@ -93,7 +90,7 @@ export async function generateScript(params: ScriptGenerationParams) {
       script,
       keyPoints,
       targetAudience: context.audience,
-      language: context.language,
+      language: language,
     }
   } catch (error) {
     console.error("Error generating script:", error)

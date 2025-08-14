@@ -21,3 +21,5 @@ export type GeneratedScript = {
 }
 
 export type Language = 'en' | 'vi' | 'ms' | 'fil';
+
+export type Region = 'philippines' | 'vietnam' | 'malaysia';

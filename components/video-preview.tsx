@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Download, Loader2, ArrowLeft } from "lucide-react"
 import type { VideoFile } from "@/types/video"
-import { generateMixedVideo, checkRenderStatus } from "@/lib/video-generator"
+import { generateMixedVideo, checkRenderStatus, downloadVideo } from "@/lib/video-generator"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { SpeechResult } from "@/types/speech"
@@ -66,6 +66,13 @@ export function VideoPreview({ videos, speechResult, onBack }: VideoPreviewProps
     }
   }
 
+  const handleDownloadVideo = () => {
+    if (!videoUrl || !renderId) return
+
+    const filename = `${renderId.toLowerCase()}_video.mp4`
+    downloadVideo(videoUrl, filename)
+  }
+
   return (
     <div className="space-y-6">
       <Card>
@@ -107,10 +114,9 @@ export function VideoPreview({ videos, speechResult, onBack }: VideoPreviewProps
               >
                 <source src={videoUrl} type="video/mp4" />
               </video>
-              <Button asChild className="w-full">
-                <a href={videoUrl} download>
-                  <Download className="h-4 w-4 mr-2" /> Download Video
-                </a>
+              <Button variant="outline" className="flex-1 bg-transparent" onClick={handleDownloadVideo}>
+                <Download className="h-4 w-4 mr-2" />
+                Download Video (MP4)
               </Button>
             </div>
           )}

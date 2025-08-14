@@ -49,7 +49,7 @@ export default function ContentRemixTool() {
             <h1 className="text-3xl font-bold text-gray-900">AgriContent AI</h1>
           </div>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            AI-powered tool to remix and localize agricultural content for Southeast Asian farmers
+            AI tool to remix and localize agricultural content for Southeast Asian farmers
           </p>
         </div>
 

@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Sparkles, Loader2, Copy, CheckCircle } from "lucide-react"
-import type { VideoFile, GeneratedScript } from "@/types/video"
+import type { VideoFile, GeneratedScript, Region } from "@/types/video"
 import { generateScript } from "@/lib/script-generator"
 import { useToast } from "@/hooks/use-toast"
 
@@ -30,7 +30,7 @@ export function ScriptGeneration({
 }: ScriptGenerationProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [customPrompt, setCustomPrompt] = useState("")
-  const [targetRegion, setTargetRegion] = useState("philippines")
+  const [targetRegion, setTargetRegion] = useState<Region>("philippines")
   const [contentType, setContentType] = useState("educational")
   const [copied, setCopied] = useState(false)
   const { toast } = useToast()
@@ -83,7 +83,7 @@ Try this method and let me know in the comments how it works for you. Share this
           "Regular field monitoring is crucial",
         ],
         targetAudience: "Filipino smallholder rice farmers",
-        language: "Filipino-English mix (Taglish)",
+        language: "fil",
       }
       onScriptGenerated(mockScript)
     } finally {
@@ -150,9 +150,9 @@ Try this method and let me know in the comments how it works for you. Share this
                   <SelectValue placeholder="Select target region" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="philippines">Philippines</SelectItem>
-                  <SelectItem value="vietnam">Vietnam</SelectItem>
-                  <SelectItem value="malaysia">Malaysia</SelectItem>
+                  <SelectItem value='philippines'>Philippines</SelectItem>
+                  <SelectItem value='vietnam'>Vietnam</SelectItem>
+                  <SelectItem value='malaysia'>Malaysia</SelectItem>
                 </SelectContent>
               </Select>
             </div>

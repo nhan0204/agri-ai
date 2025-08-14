@@ -189,7 +189,7 @@ export function TranscriptionResults({
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack} >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          {useIsMobile() ?"" : "Back to Upload"}
+          {useIsMobile() ? "" : "Back to Upload"}
         </Button>
         <Button onClick={onNext} disabled={isProcessing || processedVideos.length === 0} size={useIsMobile() ? "default" : "lg"}>
           Generate New Script

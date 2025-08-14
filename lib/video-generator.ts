@@ -150,3 +150,12 @@ export async function checkRenderStatus(renderId: string) {
   console.log("Status check data:", data);
   return data;
 }
+
+export function downloadVideo(videoUrl: string, filename = "generated-video.mp4"): void  {
+  const link = document.createElement("a")
+  link.href = videoUrl
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
