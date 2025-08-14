@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Sparkles, Loader2, Copy, CheckCircle } from "lucide-react"
 import type { VideoFile, GeneratedScript } from "@/types/video"
 import { generateScript } from "@/lib/script-generator"
+import { useToast } from "@/hooks/use-toast"
 
 interface ScriptGenerationProps {
   videos: VideoFile[]
@@ -32,6 +33,7 @@ export function ScriptGeneration({
   const [targetRegion, setTargetRegion] = useState("philippines")
   const [contentType, setContentType] = useState("educational")
   const [copied, setCopied] = useState(false)
+  const { toast } = useToast()
 
   const handleGenerateScript = async () => {
     setIsGenerating(true)
@@ -40,6 +42,7 @@ export function ScriptGeneration({
       const allInsights = videos.flatMap((video) => video.keyInsights || [])
       const allTranscriptions = videos.map((video) => video.transcription || "").join(" ")
 
+      console.log("All insights: ", allInsights)
       console.log("All transcriptions: ", allTranscriptions)
 
       const script = await generateScript({
@@ -49,6 +52,14 @@ export function ScriptGeneration({
         contentType,
         customPrompt,
       })
+
+      if (!script) {
+        toast({
+          title: "Failed to generate script",
+          variant: "destructive",
+        })
+        return null;
+      }
 
       onScriptGenerated(script)
     } catch (error) {
@@ -141,8 +152,6 @@ Try this method and let me know in the comments how it works for you. Share this
                 <SelectContent>
                   <SelectItem value="philippines">Philippines</SelectItem>
                   <SelectItem value="vietnam">Vietnam</SelectItem>
-                  <SelectItem value="thailand">Thailand</SelectItem>
-                  <SelectItem value="indonesia">Indonesia</SelectItem>
                   <SelectItem value="malaysia">Malaysia</SelectItem>
                 </SelectContent>
               </Select>
@@ -159,6 +168,7 @@ Try this method and let me know in the comments how it works for you. Share this
                   <SelectItem value="problem-solving">Problem Solving</SelectItem>
                   <SelectItem value="seasonal-tips">Seasonal Tips</SelectItem>
                   <SelectItem value="product-demo">Product Demonstration</SelectItem>
+                  <SelectItem value="entertainment">Media - Entertaining</SelectItem>
                 </SelectContent>
               </Select>
             </div>

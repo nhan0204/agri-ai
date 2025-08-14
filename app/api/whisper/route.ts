@@ -1,76 +1,91 @@
-import { NextRequest, NextResponse } from 'next/server';
-import axios from 'axios';
+import { NextRequest, NextResponse } from "next/server";
+import axios from "axios";
 import { openai } from "@ai-sdk/openai";
 import { generateText, experimental_transcribe as transcribe } from "ai";
-import { extractAgriculturalInsights } from "@/lib/extract-insights";
+import { getVideoInfo } from "@/lib/video-metadata";
+
+const apiKey = process.env.RAPID_API_KEY;
 
 export async function GET(req: NextRequest) {
   try {
-    const apiKey = process.env.RAPID_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: 'Api key not found' }, { status: 404 });
+      return NextResponse.json({ error: "Api key not found" }, { status: 404 });
     }
 
-    const id = req.nextUrl.searchParams.get('id');
-    const lang = req.nextUrl.searchParams.get('lang') || 'en';
-    
-    if (!id ) {
-      return NextResponse.json({ error: 'Missing id' }, { status: 400 });
-    }
-    
-    // Validate language code (basic ISO-639-1 check)
-    const validLang = /^[a-z]{2}$/.test(lang);
-    if (!validLang) {
+    const url = req.nextUrl.searchParams.get("url");
+
+    if (!url) {
       return NextResponse.json(
-        { error: 'Invalid language code. Must be in ISO-639-1 format (e.g., "en")' },
+        { error: "Video url is required" },
         { status: 400 }
       );
     }
 
-    const mp3Url = `https://youtube-mp3-audio-video-downloader.p.rapidapi.com/download-mp3/${id}?quality=low`;
-    console.log("Downloading audio from", mp3Url);
+    const lang = req.nextUrl.searchParams.get("lang") || "en";
+    const validLang = /^[a-z]{2}$/.test(lang);
 
-    // Download MP3 as ArrayBuffer
-    const response = await axios.get(mp3Url, {
-      headers: {
-        'x-rapidapi-host': 'youtube-mp3-audio-video-downloader.p.rapidapi.com',
-        'x-rapidapi-key': apiKey,
-      },
-      responseType: 'arraybuffer',
-    });
+    if (!validLang) {
+      return NextResponse.json(
+        {
+          error:
+            'Invalid language code. Must be in ISO-639-1 format (e.g., "en")',
+        },
+        { status: 400 }
+      );
+    }
 
-    console.log("MP3 data", response.data)
+    let audio;
 
-    const audioBuffer = Buffer.from(response.data);
+    const info = getVideoInfo(url);
 
-    // Pass MP3 directly to Whisper
+    if (!info) {
+      throw new Error(`Failed to get ${url} info`);
+    }
+
+    const { service, id } = info;
+
+    console.log(`Serving platform ${service}`);
+
+    switch (service) {
+      case "youtube":
+        audio = await getYoutubeAudio(id);
+        break;
+
+      case "tiktok":
+        audio = await getTiktokAudio(url);
+        break;
+
+      default:
+        throw new Error("Unsupport video platform");
+    }
+
     const transcription = await transcribe({
       model: openai.transcription("whisper-1"),
-      audio: audioBuffer,
+      audio: audio!,
       providerOptions: {
         openai: {
           response_format: "verbose_json",
           timestamp_granularities: ["segment"],
-          language: lang || 'en'
+          language: lang || "en",
         },
       },
     });
 
     const translation = await generateText({
-      model: openai.languageModel('gpt-4.1-mini'),
-      system: 'You are an  South East Asia linguist.' +
-              'You understand Thai, Lao, Cambodian, Vietnamese, Malaysian' +
-              'You must return the translation only and no excessive words',
-      prompt: `Translate this transcript into English ${transcription.text}`
-    })
+      model: openai.languageModel("gpt-4.1-mini"),
+      system:
+        "You are an  South East Asia linguist." +
+        "You understand Thai, Lao, Cambodian, Vietnamese, Malaysian" +
+        "You must return the translation only and no excessive words",
+      prompt: `Translate this transcript into English ${transcription.text}`,
+    });
 
     const fullText = transcription.text || "";
-    const segments =
-      transcription.segments?.map((seg: any) => ({
-        start: seg.startSecond || 0,
-        end: seg.endSecond || 0,
-        text: seg.text || "",
-      })) || [{ start: 0, end: 30, text: fullText }];
+    const segments = transcription.segments?.map((seg: any) => ({
+      start: seg.startSecond || 0,
+      end: seg.endSecond || 0,
+      text: seg.text || "",
+    })) || [{ start: 0, end: 30, text: fullText }];
 
     const duration =
       transcription.durationInSeconds ||
@@ -82,12 +97,99 @@ export async function GET(req: NextRequest) {
       language: lang,
       duration,
     });
-
   } catch (err: any) {
-    console.error('Transcription failed:', err);
+    console.error("Transcription failed:", err);
     return NextResponse.json(
-      { error: 'Failed to transcribe audio', details: err.message },
+      { error: "Failed to transcribe audio", details: err.message },
       { status: 500 }
     );
+  }
+}
+
+async function getYoutubeAudio(id: string) {
+  try {
+    const url = `https://youtube-mp3-audio-video-downloader.p.rapidapi.com/download-mp3/${id}?quality=low`;
+    console.log("Downloading audio from", url);
+
+    // Download MP3 as ArrayBuffer
+    const response = await axios.get(url, {
+      headers: {
+        "x-rapidapi-host": "youtube-mp3-audio-video-downloader.p.rapidapi.com",
+        "x-rapidapi-key": apiKey,
+      },
+      responseType: "arraybuffer",
+    });
+
+    console.log("Audio data", response.data);
+
+    const audioBuffer = Buffer.from(response.data);
+
+    if (!audioBuffer) {
+      throw new Error(`Failed to download audio from youtube: ${id}`);
+    }
+
+    return audioBuffer;
+  } catch (error) {
+    console.error("Get youtube api error", error);
+    throw error;
+  }
+}
+
+async function getTiktokAudio(url: string) {
+  try {
+    const apiUrl = `https://tiktok-video-audio-downloader-api.p.rapidapi.com/json?url=${url}`;
+    console.log("Downloading audio from", apiUrl);
+    const response = await axios.get(apiUrl, {
+      headers: {
+        "x-rapidapi-host": "tiktok-video-audio-downloader-api.p.rapidapi.com",
+        "x-rapidapi-key": apiKey,
+      },
+      responseType: "json",
+    });
+
+    const downloadUrl = response.data.download_links.audio;
+    
+    if (!downloadUrl) {
+      throw new Error(`Failed to get audio link from tiktok: ${url}`);
+    }
+
+    console.log("Audio download URL:", downloadUrl);
+    
+    const base64Part = downloadUrl.split("/dlUrl/")[1];
+
+    if (!base64Part) {
+      throw new Error("Invalid download URL format");
+    }
+
+    const decodedString = Buffer.from(base64Part, "base64").toString("utf-8");
+    const decodedUrl = new URL(decodedString);
+    const directAudioUrl = decodedUrl.searchParams.get("url");
+
+    if (!directAudioUrl) {
+      throw new Error("Failed to extract direct audio URL");
+    }
+    
+    console.log("Direct audio URL:", directAudioUrl);
+
+    const audioResponse = await axios.get(directAudioUrl, {
+      responseType: "arraybuffer",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+      },
+    });
+
+    console.log("Audio data", audioResponse.data);
+
+    const audioBuffer = Buffer.from(audioResponse.data);
+    
+    if (!audioBuffer || audioBuffer.length === 0) {
+      throw new Error(`Failed to get audio from: ${directAudioUrl}`);
+    }
+
+    return audioBuffer;
+  } catch (error) {
+    console.error("Get tiktok api error", error);
+    throw error;
   }
 }

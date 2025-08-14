@@ -270,33 +270,39 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3  gap-4">
               {uploadedVideos.map((video) => (
-                <Link 
-                  href={video.url} 
+                <div 
                   key={video.id}
-                  target="_blank"
-                  rel="noopner noreferrer" 
-                  className="border rounded-lg p-4 relative hover:opacity-70 scale-100 hover:scale-105 transform transition-all"
+                  className="border rounded-lg p-4 relative scale-100 hover:scale-105 transform transition-all"
                 >
                   <Button
                     variant="ghost"
                     size="sm"
                     className="absolute top-2 right-2 h-8 w-8 p-0"
-                    onClick={() => removeVideo(video.id)}
+                    onClick={(e) =>{ 
+                      e.stopPropagation();
+                      removeVideo(video.id);
+                    }}
                   >
                     <X className="h-4 w-4" />
                   </Button>
-                  {video.url.startsWith("blob:") ? (
-                    <video src={video.url} className="w-full h-32 object-cover rounded mb-3" controls={false} muted />
-                  ) : (
-                    <img
-                      src={video.thumbnail || "/placeholder.svg"}
-                      alt={video.name}
-                      className="w-full h-32 object-cover rounded mb-3"
-                    />
-                  )}
-                  <h4 className="font-medium text-sm mb-1">{video.name}</h4>
-                  <p className="text-xs text-gray-500">{video.duration}s duration</p>
-                </Link>
+                  <Link
+                    href={video.url} 
+                    target="_blank"
+                    rel="noopner noreferrer" 
+                  >
+                    {video.url.startsWith("blob:") ? (
+                      <video src={video.url} className="w-full h-32 object-cover rounded mb-3 hover:opacity-70 " controls={false} muted />
+                    ) : (
+                      <img
+                        src={video.thumbnail || "/placeholder.svg"}
+                        alt={video.name}
+                        className="w-full h-32 object-cover rounded mb-3"
+                      />
+                    )}
+                    <h4 className="font-medium text-sm mb-1">{video.name}</h4>
+                    <p className="text-xs text-gray-500">{video.duration}s duration</p>
+                  </Link>
+                </div>
               ))}
             </div>
           </CardContent>

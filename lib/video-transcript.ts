@@ -23,7 +23,7 @@ export interface TranscriptionOptions {
 
 /**
  * Transcribe video from URL using Supadata API for all platforms
- * @param videoUrl - URL to the video (YouTube, TikTok, Instagram, X, etc.)
+ * @param videoUrl - URL to the video (r, TikTok, Instagram, X, etc.)
  * @param options - Transcription options
  * @returns Transcription result with text and segments
  */
@@ -52,45 +52,17 @@ export async function transcribeVideoFromUrl(
 
       console.log("External url detected");
 
-      const videoInfo = getVideoInfo(videoUrl)!
+      const response = await fetch(`api/whisper?url=${videoUrl}&lang=${language}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      })
 
-      if (!videoInfo) {
-        throw new Error(`Invalid video`);
-      }
+      if (!response.ok) return null;
 
-      const { service, id } = videoInfo;
-      
-      console.log(`Platform ${service} - ${id}`)
-      
-      switch (service) {
-        case 'youtube':
-          const youtubResponse = await fetch(`api/whisper?id=${id}&lang=${language}`, {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          })
+      const transcript = await response.json();
 
-          if (!youtubResponse.ok) return null;
-
-          const youtubeTranscript = await youtubResponse.json();
-
-          console.log("Whisper transcription successful: ", youtubeTranscript);
-          return youtubeTranscript;
-      
-        case 'tiktok':
-          videoUrl = videoUrl.split('?')[0]
-
-          const tiktokResponse = await fetch('api/tiktok', {
-            method: "POST",
-            body: JSON.stringify({videoUrl})
-          })
-
-          if (!tiktokResponse.ok) return null;
-
-          const tiktokTranscript = await tiktokResponse.json();
-
-          console.log("Tiktok transcription successful: ", tiktokTranscript);
-          return tiktokTranscript;
-      }
+      console.log("Whisper transcription successful: ", transcript);
+      return transcript;
     } catch (error) {
       console.error("Video transcription failed:", error);
       return generateMockTranscription(videoUrl);

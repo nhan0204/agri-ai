@@ -74,7 +74,7 @@ export function TranscriptionResults({
       try {
         console.log(`Processing video: ${video.url}`)
         const transcriptionResult = await transcribeVideoFromUrl(video.url, video.language)
-        const keyInsights = await extractAgriculturalInsights(transcriptionResult.text)
+        const keyInsights = await extractAgriculturalInsights([transcriptionResult.text, video.name].join(' '))
 
         const processedVideo = {
           ...video,

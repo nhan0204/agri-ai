@@ -8,7 +8,7 @@ import { VoiceoverPreview } from "@/components/voiceover-preview"
 import { Badge } from "@/components/ui/badge"
 import { Leaf, Video, Mic, Sparkles } from "lucide-react"
 import type { VideoFile, GeneratedScript } from "@/types/video"
-import Link from "next/link"
+import type { SpeechResult } from "@/lib/speech-generator"
 
 export default function ContentRemixTool() {
   const [currentStep, setCurrentStep] = useState(1)
@@ -16,10 +16,18 @@ export default function ContentRemixTool() {
   const [processedVideos, setProcessedVideos] = useState<VideoFile[]>([])
   const [generatedScript, setGeneratedScript] = useState<GeneratedScript | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [speechResult, setSpeechResult] = useState<SpeechResult | null>(null)
 
   const memoizedProcessedVideos = useMemo(() => {
     return processedVideos.filter((video) => video.transcription && video.keyInsights)
   }, [processedVideos])
+
+  const memoizedSpeechResult = useMemo(() => {
+    if (!generatedScript || !speechResult) return null
+
+    // Cache speech result based on script content to prevent unnecessary regeneration
+    return speechResult
+  }, [generatedScript, speechResult])
 
   const steps = [
     { id: 1, title: "Upload Videos", icon: Video, description: "Upload TikTok videos for analysis" },
@@ -33,10 +41,10 @@ export default function ContentRemixTool() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <Link href="/" className="flex items-center justify-center gap-2 mb-4">
+          <div className="flex items-center justify-center gap-2 mb-4">
             <Leaf className="h-8 w-8 text-green-600" />
             <h1 className="text-3xl font-bold text-gray-900">AgriContent AI</h1>
-          </Link>
+          </div>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
             AI-powered tool to remix and localize agricultural content for Southeast Asian farmers
           </p>
@@ -113,7 +121,12 @@ export default function ContentRemixTool() {
           )}
 
           {currentStep === 4 && generatedScript && (
-            <VoiceoverPreview script={generatedScript} onBack={() => setCurrentStep(3)} />
+            <VoiceoverPreview
+              script={generatedScript}
+              onBack={() => setCurrentStep(3)}
+              speechResult={memoizedSpeechResult}
+              setSpeechResult={setSpeechResult}
+            />
           )}
         </div>
       </div>

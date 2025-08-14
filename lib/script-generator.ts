@@ -24,16 +24,6 @@ export async function generateScript(params: ScriptGenerationParams) {
       culturalNotes: "Reference Vietnamese farming traditions, use respectful tone",
       audience: "Vietnamese smallholder farmers",
     },
-    thailand: {
-      language: "Thai with English agricultural terms",
-      culturalNotes: "Include Thai cultural elements, reference local crops like jasmine rice",
-      audience: "Thai smallholder farmers",
-    },
-    indonesia: {
-      language: "Indonesian (Bahasa Indonesia)",
-      culturalNotes: "Reference Indonesian farming practices, use appropriate honorifics",
-      audience: "Indonesian smallholder farmers",
-    },
     malaysia: {
       language: "Malay-English mix",
       culturalNotes: "Include Malaysian farming context, use familiar local terms",
@@ -43,49 +33,64 @@ export async function generateScript(params: ScriptGenerationParams) {
 
   const context = regionContext[targetRegion as keyof typeof regionContext] || regionContext.philippines
 
-  const systemPrompt = `You are an expert agricultural content creator specializing in TikTok videos for Southeast Asian farmers. Your goal is to create engaging, educational content that helps smallholder farmers improve their practices.
+  const systemPrompt = `You are an expert agricultural content creator for TikTok. Create SHORT, cost-effective scripts for voiceover.
+                        STRICT REQUIREMENTS:
+                        - Maximum 30-45 seconds when spoken (150-200 words MAX)
+                        - NO scene descriptions, camera directions, or brackets
+                        - Direct, conversational tone in ${context.language}
+                        - ONE main farming tip only
+                        - Target: ${context.audience}
+                        - End with simple call-to-action`
 
-Key requirements:
-- Write in ${context.language}
-- Target audience: ${context.audience}
-- Content type: ${contentType}
-- Cultural context: ${context.culturalNotes}
-- Keep it conversational and relatable
-- Include practical, actionable advice
-- Use a friendly, encouraging tone
-- Structure for TikTok format (short, engaging, visual)
-- Include call-to-action for engagement`
+  const userPrompt = `Key insights: ${insights.slice(0, 3).join(", ")}
+                      Transcription sample: ${transcriptions.substring(0, 300)}
+                      ${customPrompt ? `Focus: ${customPrompt}` : ""}
+                      Create a SHORT TikTok voiceover script (30-45 seconds max) that:
+                      1. Teaches ONE specific farming technique
+                      2. Uses simple, direct language
+                      3. Includes practical steps (max 3 steps)
+                      4. Ends with engagement question
+                      NO scene descriptions. Pure voiceover text only.`
 
-  const userPrompt = `Based on these key insights from existing agricultural videos:
-${insights.join(", ")}
+  const regionLanguage = {
+    philippines: "tl", // Tagalog
+    vietnam: "vi",
+    thailand: "th",
+    indonesia: "id",
+    malaysia: "ms",
+  }
 
-And these transcription excerpts:
-${transcriptions.substring(0, 1000)}...
+  type TargetRegion = keyof typeof regionLanguage;
 
-${customPrompt ? `Additional requirements: ${customPrompt}` : ""}
-
-Create a new TikTok script that:
-1. Combines the best elements from the source material
-2. Is tailored for ${context.audience}
-3. Follows ${contentType} format
-4. Is engaging and educational
-5. Includes practical tips farmers can immediately use
-
-The script should be 60-90 seconds when spoken, include natural pauses, and be optimized for voiceover generation.`
+  const language = regionLanguage[targetRegion as TargetRegion] || 'en';
 
   try {
-    const { text } = await generateText({
-      model: openai("gpt-4o"),
-      system: systemPrompt,
-      prompt: userPrompt,
-    })
+    const response = await fetch("api/generate-script", {
+      method: "POST",
+      body: JSON.stringify({ system: systemPrompt, prompt: userPrompt, lang: language })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result || !result.data) {
+      console.error("Error generating script.");
+      return null;
+    }
+
+    const script = result.data;  // Access the 'text' property from generateText result
+
+    console.log("Generated script: ", script)
 
     // Extract key points from the generated script
-    const keyPoints = extractKeyPoints(text)
+    const keyPoints = extractKeyPoints(script)
 
     return {
-      title: generateTitle(text, contentType, targetRegion),
-      script: text,
+      title: generateTitle(script, contentType, targetRegion),
+      script,
       keyPoints,
       targetAudience: context.audience,
       language: context.language,

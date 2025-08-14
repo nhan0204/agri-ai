@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -9,46 +9,112 @@ import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Mic, Play, Pause, Download, Volume2, User, Clock } from "lucide-react"
-import type { GeneratedScript } from "@/app/demo/page"
+import type { GeneratedScript } from "@/types/video"
+import {
+  AVAILABLE_VOICES,
+  generateSpeech,
+  estimateAudioDuration,
+  validateTextForSpeech,
+  downloadAudio,
+  type SpeechResult,
+} from "@/lib/speech-generator"
 
 interface VoiceoverPreviewProps {
   script: GeneratedScript
   onBack: () => void
+  speechResult: SpeechResult | null
+  setSpeechResult: (result: SpeechResult | null) => void
 }
 
-export function VoiceoverPreview({ script, onBack }: VoiceoverPreviewProps) {
-  const [selectedVoice, setSelectedVoice] = useState("maria-filipino")
+export function VoiceoverPreview({ script, onBack, speechResult, setSpeechResult }: VoiceoverPreviewProps) {
+  const [selectedVoice, setSelectedVoice] = useState("kael-filipino")
   const [speed, setSpeed] = useState([1.0])
   const [isPlaying, setIsPlaying] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [voiceoverGenerated, setVoiceoverGenerated] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  const voices = [
-    { id: "maria-filipino", name: "Maria", language: "Filipino", accent: "Manila", gender: "Female" },
-    { id: "jose-filipino", name: "Jose", language: "Filipino", accent: "Cebu", gender: "Male" },
-    { id: "anna-english", name: "Anna", language: "English", accent: "Philippine English", gender: "Female" },
-    { id: "carlos-mixed", name: "Carlos", language: "Taglish", accent: "Mixed", gender: "Male" },
-  ]
+  const voiceoverGenerated = useMemo(() => {
+    return speechResult?.success && speechResult?.audioUrl
+  }, [speechResult])
+
+  const audioUrl = speechResult?.audioUrl || null
+
+  const voices = AVAILABLE_VOICES
 
   const handleGenerateVoiceover = async () => {
+    
+
     setIsGenerating(true)
-    // Simulate voiceover generation
-    await new Promise((resolve) => setTimeout(resolve, 3000))
-    setIsGenerating(false)
-    setVoiceoverGenerated(true)
+    setError(null)
+
+    try {
+      const validation = validateTextForSpeech(script.script)
+      if (!validation.valid) {
+        throw new Error(validation.error)
+      }
+
+      const result = await generateSpeech(script.script, {
+        voiceId: selectedVoice,
+        modelId: "eleven_multilingual_v2",
+        outputFormat: "mp3_44100_128",
+        stability: 0.6,
+        similarityBoost: 0.8,
+        style: 0.2,
+        useSpeakerBoost: true,
+      })
+
+      if (!result.success) {
+        throw new Error(result.error || "Failed to generate voiceover")
+      }
+
+      setSpeechResult(result)
+
+      if (audioRef.current) {
+        audioRef.current.src = result.audioUrl
+      }
+    } catch (error: any) {
+      console.error("Voiceover generation error:", error)
+      setError(error.message || "Failed to generate voiceover")
+    } finally {
+      setIsGenerating(false)
+    }
   }
 
   const togglePlayback = () => {
+    if (!audioRef.current || !audioUrl) return
+
+    if (isPlaying) {
+      audioRef.current.pause()
+    } else {
+      audioRef.current.play()
+    }
     setIsPlaying(!isPlaying)
-    // In a real implementation, control audio playback here
+  }
+
+  const handleAudioEnded = () => {
+    setIsPlaying(false)
+  }
+
+  const handleAudioError = () => {
+    setError("Failed to play audio")
+    setIsPlaying(false)
+  }
+
+  const handleDownloadAudio = () => {
+    if (!audioUrl) return
+
+    const filename = `${script.title.replace(/[^a-z0-9]/gi, "_").toLowerCase()}_voiceover.mp3`
+    downloadAudio(audioUrl, filename)
   }
 
   const selectedVoiceData = voices.find((v) => v.id === selectedVoice)
-  const estimatedDuration = Math.ceil(script.script.length / 10) // Rough estimate
+  const estimatedDuration = speechResult?.duration || estimateAudioDuration(script.script)
 
   return (
     <div className="space-y-6">
-      {/* Script Summary */}
+      <audio ref={audioRef} onEnded={handleAudioEnded} onError={handleAudioError} style={{ display: "none" }} />
+
       <Card>
         <CardHeader>
           <CardTitle>{script.title}</CardTitle>
@@ -72,7 +138,6 @@ export function VoiceoverPreview({ script, onBack }: VoiceoverPreviewProps) {
         </CardContent>
       </Card>
 
-      {/* Voice Selection */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -86,7 +151,19 @@ export function VoiceoverPreview({ script, onBack }: VoiceoverPreviewProps) {
             <Label>Voice Selection</Label>
             <Select value={selectedVoice} onValueChange={setSelectedVoice}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a voice" />
+                <SelectValue placeholder="Select a voice">
+                  {selectedVoiceData && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">{selectedVoiceData.name}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {selectedVoiceData.gender}
+                      </Badge>
+                      <span className="text-sm text-gray-500">
+                        {selectedVoiceData.language} • {selectedVoiceData.accent}
+                      </span>
+                    </div>
+                  )}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {voices.map((voice) => (
@@ -96,8 +173,8 @@ export function VoiceoverPreview({ script, onBack }: VoiceoverPreviewProps) {
                       <Badge variant="outline" className="text-xs">
                         {voice.gender}
                       </Badge>
-                      <span className="text-sm text-gray-500">
-                        {voice.language} - {voice.accent}
+                      <span className="text-xs text-gray-500">
+                        {voice.language} • {voice.accent}
                       </span>
                     </div>
                   </SelectItem>
@@ -112,11 +189,12 @@ export function VoiceoverPreview({ script, onBack }: VoiceoverPreviewProps) {
                 <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
                   <User className="h-5 w-5 text-white" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <h4 className="font-medium text-blue-900">{selectedVoiceData.name}</h4>
                   <p className="text-sm text-blue-700">
                     {selectedVoiceData.language} • {selectedVoiceData.accent} • {selectedVoiceData.gender}
                   </p>
+                  <p className="text-xs text-blue-600 mt-1">{selectedVoiceData.culturalFit}</p>
                 </div>
               </div>
             </div>
@@ -131,6 +209,12 @@ export function VoiceoverPreview({ script, onBack }: VoiceoverPreviewProps) {
               <span>Faster (2.0x)</span>
             </div>
           </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-800 text-sm">{error}</p>
+            </div>
+          )}
 
           <Button onClick={handleGenerateVoiceover} disabled={isGenerating} className="w-full" size="lg">
             {isGenerating ? (
@@ -148,15 +232,13 @@ export function VoiceoverPreview({ script, onBack }: VoiceoverPreviewProps) {
         </CardContent>
       </Card>
 
-      {/* Generated Voiceover */}
-      {voiceoverGenerated && (
+      {voiceoverGenerated && audioUrl && (
         <Card>
           <CardHeader>
             <CardTitle>Generated Voiceover</CardTitle>
             <CardDescription>Your AI-generated voiceover is ready for preview and download</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Audio Player Mockup */}
             <div className="bg-gray-50 rounded-lg p-6">
               <div className="flex items-center gap-4">
                 <Button
@@ -171,7 +253,7 @@ export function VoiceoverPreview({ script, onBack }: VoiceoverPreviewProps) {
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">
-                      {script.title} - {selectedVoiceData?.name}
+                      {script.title} - {speechResult?.voiceUsed || selectedVoiceData?.name}
                     </span>
                     <span className="text-sm text-gray-500">0:00 / {estimatedDuration}s</span>
                   </div>
@@ -187,7 +269,6 @@ export function VoiceoverPreview({ script, onBack }: VoiceoverPreviewProps) {
 
             <Separator />
 
-            {/* Video Preview Mockup */}
             <div className="space-y-3">
               <Label className="text-sm font-medium">Video Preview</Label>
               <div className="aspect-video bg-gray-900 rounded-lg relative overflow-hidden">
@@ -203,30 +284,25 @@ export function VoiceoverPreview({ script, onBack }: VoiceoverPreviewProps) {
                   </Button>
                 </div>
 
-                {/* Subtitle overlay */}
                 <div className="absolute bottom-4 left-4 right-4">
                   <div className="bg-black bg-opacity-75 rounded px-3 py-2">
-                    <p className="text-white text-sm text-center">
-                      "Kumusta mga kababayan farmers! Today I'll share with you..."
-                    </p>
+                    <p className="text-white text-sm text-center">"{script.script.substring(0, 60)}..."</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Download Options */}
             <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 bg-transparent">
+              <Button variant="outline" className="flex-1 bg-transparent" onClick={handleDownloadAudio}>
                 <Download className="h-4 w-4 mr-2" />
                 Download Audio (MP3)
               </Button>
-              <Button className="flex-1">
+              <Button className="flex-1" disabled>
                 <Download className="h-4 w-4 mr-2" />
-                Download Video (MP4)
+                Download Video (Coming Soon)
               </Button>
             </div>
 
-            {/* Export Stats */}
             <div className="bg-green-50 rounded-lg p-4">
               <h4 className="font-medium text-green-900 mb-2">Export Summary</h4>
               <div className="grid grid-cols-2 gap-4 text-sm">
@@ -236,7 +312,7 @@ export function VoiceoverPreview({ script, onBack }: VoiceoverPreviewProps) {
                 </div>
                 <div>
                   <span className="text-green-700">Voice:</span>
-                  <span className="ml-2 font-medium">{selectedVoiceData?.name}</span>
+                  <span className="ml-2 font-medium">{speechResult?.voiceUsed || selectedVoiceData?.name}</span>
                 </div>
                 <div>
                   <span className="text-green-700">Language:</span>
@@ -252,7 +328,6 @@ export function VoiceoverPreview({ script, onBack }: VoiceoverPreviewProps) {
         </Card>
       )}
 
-      {/* Navigation */}
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack}>
           <ArrowLeft className="h-4 w-4 mr-2" />

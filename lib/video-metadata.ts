@@ -12,8 +12,8 @@ interface VideoMetadata {
 }
 
 export interface VideoInfo {
-  service: string;
   id: string;
+  service: string;
 }
 
 // Simple video ID extraction
