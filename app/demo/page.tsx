@@ -10,6 +10,7 @@ import { Leaf, Video, Mic, Sparkles, Videotape } from "lucide-react"
 import type { VideoFile, GeneratedScript } from "@/types/video"
 import { VideoPreview } from "@/components/video-preview"
 import { SpeechResult } from "@/types/speech"
+import { redirect } from "next/navigation"
 
 export default function ContentRemixTool() {
   const [currentStep, setCurrentStep] = useState(1)
@@ -42,8 +43,8 @@ export default function ContentRemixTool() {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-2 mb-4">
+        <div className="text-center mb-8 ">
+          <div  onClick={() => redirect('/')} className="flex items-center justify-center gap-2 mb-4 hover:cursor-pointer scale-100 hover:scale-105 transition-all">
             <Leaf className="h-8 w-8 text-green-600" />
             <h1 className="text-3xl font-bold text-gray-900">AgriContent AI</h1>
           </div>
@@ -54,7 +55,7 @@ export default function ContentRemixTool() {
 
         {/* Progress Steps */}
         <div className="flex justify-center mb-8">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-4 overflow-x-auto">
             {steps.map((step, index) => {
               const Icon = step.icon
               const isActive = currentStep === step.id

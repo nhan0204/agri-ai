@@ -1,8 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js"
 
-console.log(process.env.ELEVENLABS_API_KEY)
-
 const elevenlabs = new ElevenLabsClient({
   apiKey: process.env.ELEVENLABS_API_KEY,
 })

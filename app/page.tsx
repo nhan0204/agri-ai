@@ -160,16 +160,16 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.4, ease: [0.6, -0.05, 0.01, 0.99] }}
             >
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-2 mb-8">
-                  <TabsTrigger value="ai-platform" className="flex items-center gap-2">
+                {/* <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-2 mb-8">
+                  <TabsTrigger onClick={() => setActiveTab('ai-platform')} value="ai-platform" className="flex items-center gap-2">
                     <Brain className="h-4 w-4" />
                     AI Content Remix
                   </TabsTrigger>
-                  <TabsTrigger value="about" className="flex items-center gap-2">
+                  <TabsTrigger onClick={() => setActiveTab('about')} value="about" className="flex items-center gap-2">
                     <Sprout className="h-4 w-4" />
                     About Fermy
                   </TabsTrigger>
-                </TabsList>
+                </TabsList> */}
 
                 <AnimatePresence mode="wait">
                   <TabsContent key="ai-platform" value="ai-platform" className="space-y-4">
@@ -590,7 +590,7 @@ export default function Home() {
                           </Button>
                         </motion.div>
                       </motion.div>
-                      <motion.div variants={fadeInUp}>
+                      {/* <motion.div variants={fadeInUp}>
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                           <Button size="lg" variant="outline" className="bg-transparent"
                             onClick={() => redirect('/demo')}
@@ -598,9 +598,9 @@ export default function Home() {
                             Schedule Demo
                           </Button>
                         </motion.div>
-                      </motion.div>
+                      </motion.div> */}
                     </motion.div>
-                    <motion.p
+                    {/* <motion.p
                       className="text-sm text-gray-500 mt-4"
                       initial={{ opacity: 0 }}
                       whileInView={{ opacity: 1 }}
@@ -608,7 +608,7 @@ export default function Home() {
                       transition={{ duration: 0.6, delay: 0.3, ease: [0.6, -0.05, 0.01, 0.99] }}
                     >
                       No credit card required • Full platform access
-                    </motion.p>
+                    </motion.p> */}
                   </motion.div>
                 </div>
               </section>
