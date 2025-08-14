@@ -1,72 +1,70 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Download, Play, Loader2, ArrowLeft } from "lucide-react"
+import { Download, Loader2, ArrowLeft } from "lucide-react"
 import type { VideoFile } from "@/types/video"
-import type { SpeechResult } from "@/lib/speech-generator"
-import { generateMixedVideo } from "@/lib/video-generator"
+import { generateMixedVideo, checkRenderStatus } from "@/lib/video-generator"
+import { Button } from "@/components/ui/button"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { SpeechResult } from "@/types/speech"
 
 interface VideoPreviewProps {
   videos: VideoFile[]
   speechResult: SpeechResult | null
   onBack: () => void
-  apiKey: string
 }
 
-export function VideoPreview({ videos, speechResult, onBack, apiKey }: VideoPreviewProps) {
+export function VideoPreview({ videos, speechResult, onBack }: VideoPreviewProps) {
   const [renderId, setRenderId] = useState<string | null>(null)
-  const [statusUrl, setStatusUrl] = useState<string | null>(null)
-  const [status, setStatus] = useState<string>("idle")
+  const [status, setStatus] = useState<"idle" | "generating" | "waiting" | "done" | "error">("idle")
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  // Polling when waiting for render completion
+  useEffect(() => {
+    if (status === "waiting" && renderId) {
+      const interval = setInterval(async () => {
+        try {
+          const url = await checkRenderStatus(renderId)
+          if (url) {
+            setVideoUrl(url)
+            setStatus("done")
+            clearInterval(interval)
+          }
+
+          console.log("Video has been rendered: ", url);
+        } catch (err) {
+          console.error("Polling error:", err)
+        }
+      }, 5000) // every 5s
+
+      return () => clearInterval(interval)
+    }
+  }, [status, renderId])
 
   const handleGenerateVideo = async () => {
     setError(null)
     setStatus("generating")
     try {
-      const { renderId, statusUrl } = await generateMixedVideo(videos, speechResult, apiKey)
+      const { renderId, videoUrl } = await generateMixedVideo(videos, speechResult)
       setRenderId(renderId)
-      setStatusUrl(statusUrl)
-      setStatus("waiting")
+
+      if (videoUrl) {
+        // Render finished immediately
+        setVideoUrl(videoUrl)
+        setStatus("done")
+
+        console.log("Video render succefully: ", videoUrl);
+
+      } else {
+        // Render still processing
+        setStatus("waiting")
+      }
     } catch (err: any) {
-      console.error("Video generation error:", err)
       setError(err.message || "Failed to generate video")
       setStatus("error")
     }
   }
-
-  // Poll Shotstack for completion if statusUrl exists
-  useEffect(() => {
-    if (!statusUrl || status !== "waiting") return
-
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch(statusUrl, { headers: { "x-api-key": apiKey } })
-        if (!res.ok) throw new Error("Failed to fetch render status")
-
-        const data = await res.json()
-        const renderStatus = data?.response?.status
-        if (renderStatus === "done") {
-          setVideoUrl(data?.response?.url || null)
-          setStatus("done")
-          clearInterval(interval)
-        } else if (renderStatus === "failed") {
-          setStatus("error")
-          setError("Video rendering failed")
-          clearInterval(interval)
-        }
-      } catch (err: any) {
-        console.error("Status polling error:", err)
-        setStatus("error")
-        setError(err.message)
-        clearInterval(interval)
-      }
-    }, 5000) // poll every 5s
-
-    return () => clearInterval(interval)
-  }, [statusUrl, apiKey, status])
 
   return (
     <div className="space-y-6">
@@ -92,13 +90,21 @@ export function VideoPreview({ videos, speechResult, onBack, apiKey }: VideoPrev
           {status === "waiting" && (
             <div className="flex items-center gap-2 text-gray-600">
               <Loader2 className="h-5 w-5 animate-spin" />
-              <span>Rendering in progress... (this may take a while)</span>
+              <span>Rendering in progress... Please wait...</span>
             </div>
           )}
 
           {status === "done" && videoUrl && (
             <div className="space-y-4">
-              <video controls className="w-full rounded-lg">
+              <video
+                controls
+                playsInline
+                className="w-full rounded-lg aspect-[9/16] object-cover"
+                onError={() => {
+                  setError("Failed to load video")
+                  setStatus("error")
+                }}
+              >
                 <source src={videoUrl} type="video/mp4" />
               </video>
               <Button asChild className="w-full">
@@ -115,9 +121,11 @@ export function VideoPreview({ videos, speechResult, onBack, apiKey }: VideoPrev
         </CardContent>
       </Card>
 
-      <Button variant="outline" onClick={onBack}>
-        <ArrowLeft className="h-4 w-4 mr-2" /> Back
-      </Button>
+      <div className="flex justify-between">
+        <Button variant="outline" onClick={onBack}>
+          <ArrowLeft className="h-4 w-4 mr-2" /> Back
+        </Button>
+      </div>
     </div>
   )
 }

@@ -3,6 +3,7 @@ import axios from "axios";
 import { openai } from "@ai-sdk/openai";
 import { generateText, experimental_transcribe as transcribe } from "ai";
 import { getVideoInfo } from "@/lib/video-metadata";
+import { extractDirectUrl } from "@/lib/utils";
 
 const apiKey = process.env.RAPID_API_KEY;
 
@@ -155,21 +156,11 @@ async function getTiktokAudio(url: string) {
 
     console.log("Audio download URL:", downloadUrl);
     
-    const base64Part = downloadUrl.split("/dlUrl/")[1];
-
-    if (!base64Part) {
-      throw new Error("Invalid download URL format");
-    }
-
-    const decodedString = Buffer.from(base64Part, "base64").toString("utf-8");
-    const decodedUrl = new URL(decodedString);
-    const directAudioUrl = decodedUrl.searchParams.get("url");
+    const directAudioUrl = extractDirectUrl(downloadUrl);
 
     if (!directAudioUrl) {
-      throw new Error("Failed to extract direct audio URL");
+      throw new Error("Failed to get direct url");
     }
-    
-    console.log("Direct audio URL:", directAudioUrl);
 
     const audioResponse = await axios.get(directAudioUrl, {
       responseType: "arraybuffer",

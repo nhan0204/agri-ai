@@ -13,20 +13,20 @@ import type { GeneratedScript } from "@/types/video"
 import {
   AVAILABLE_VOICES,
   generateSpeech,
-  estimateAudioDuration,
-  validateTextForSpeech,
   downloadAudio,
-  type SpeechResult,
+  estimateAudioDuration,
 } from "@/lib/speech-generator"
+import { SpeechResult } from "@/types/speech"
 
 interface VoiceoverPreviewProps {
   script: GeneratedScript
   onBack: () => void
+  onNext: () => void
   speechResult: SpeechResult | null
   setSpeechResult: (result: SpeechResult | null) => void
 }
 
-export function VoiceoverPreview({ script, onBack, speechResult, setSpeechResult }: VoiceoverPreviewProps) {
+export function VoiceoverPreview({ script, onBack, onNext, speechResult, setSpeechResult }: VoiceoverPreviewProps) {
   const [selectedVoice, setSelectedVoice] = useState("kael-filipino")
   const [speed, setSpeed] = useState([1.0])
   const [isPlaying, setIsPlaying] = useState(false)
@@ -49,19 +49,11 @@ export function VoiceoverPreview({ script, onBack, speechResult, setSpeechResult
     setError(null)
 
     try {
-      const validation = validateTextForSpeech(script.script)
-      if (!validation.valid) {
-        throw new Error(validation.error)
-      }
-
       const result = await generateSpeech(script.script, {
         voiceId: selectedVoice,
         modelId: "eleven_multilingual_v2",
         outputFormat: "mp3_44100_128",
-        stability: 0.6,
-        similarityBoost: 0.8,
-        style: 0.2,
-        useSpeakerBoost: true,
+        language: script.language
       })
 
       if (!result.success) {
@@ -267,7 +259,12 @@ export function VoiceoverPreview({ script, onBack, speechResult, setSpeechResult
               </div>
             </div>
 
-            <Separator />
+            <Button variant="outline" className="flex-1 bg-transparent" onClick={handleDownloadAudio}>
+              <Download className="h-4 w-4 mr-2" />
+              Download Audio (MP3)
+            </Button>
+
+            {/* <Separator />
 
             <div className="space-y-3">
               <Label className="text-sm font-medium">Video Preview</Label>
@@ -323,7 +320,7 @@ export function VoiceoverPreview({ script, onBack, speechResult, setSpeechResult
                   <span className="ml-2 font-medium">{speed[0]}x</span>
                 </div>
               </div>
-            </div>
+            </div> */}
           </CardContent>
         </Card>
       )}
@@ -333,12 +330,10 @@ export function VoiceoverPreview({ script, onBack, speechResult, setSpeechResult
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Script
         </Button>
-        {voiceoverGenerated && (
-          <Button size="lg" className="bg-green-600 hover:bg-green-700">
-            <Download className="h-4 w-4 mr-2" />
-            Export Final Video
-          </Button>
-        )}
+        
+        <Button onClick={onNext} disabled={!voiceoverGenerated} size="lg">
+          Generate Mix Video
+        </Button>
       </div>
     </div>
   )

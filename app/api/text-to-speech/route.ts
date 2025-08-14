@@ -9,10 +9,10 @@ const elevenlabs = new ElevenLabsClient({
 
 export async function POST(request: NextRequest) {
   try {
-    const { text, voiceId, speed = 1.0 } = await request.json()
+    const { text, voiceId, languageCode } = await request.json()
 
-    if (!text || !voiceId) {
-      return NextResponse.json({ error: "Text and voiceId are required" }, { status: 400 })
+    if (!text || !voiceId || !languageCode) {
+      return NextResponse.json({ error: "Text, LanguageCode and voiceId are required" }, { status: 400 })
     }
 
 
@@ -22,13 +22,7 @@ export async function POST(request: NextRequest) {
       text: text,
       modelId: "eleven_multilingual_v2",
       outputFormat: "mp3_44100_128",
-      voiceSettings: {
-        stability: 0.5,
-        similarityBoost: 0.8,
-        style: 0.2,
-        useSpeakerBoost: true,
-        speed: speed,
-      },
+      // languageCode: languageCode
     })
 
     // Convert audio stream to buffer

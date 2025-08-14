@@ -17,7 +17,7 @@ export type GeneratedScript = {
   script: string
   keyPoints: string[]
   targetAudience: string
-  language: string
+  language: Language
 }
 
-export type Language = 'en' | 'es' | 'fr' | 'de' | 'it' | 'pt' | 'ru' | 'ja' | 'ko' | 'zh' | 'hi' | 'ar' | 'th' | 'vi' | 'id' | 'ms' | 'tl';
+export type Language = 'en' | 'vi' | 'ms' | 'fil';

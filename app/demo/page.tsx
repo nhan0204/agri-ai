@@ -6,9 +6,10 @@ import { TranscriptionResults } from "@/components/transcription-results"
 import { ScriptGeneration } from "@/components/script-generation"
 import { VoiceoverPreview } from "@/components/voiceover-preview"
 import { Badge } from "@/components/ui/badge"
-import { Leaf, Video, Mic, Sparkles } from "lucide-react"
+import { Leaf, Video, Mic, Sparkles, Videotape } from "lucide-react"
 import type { VideoFile, GeneratedScript } from "@/types/video"
-import type { SpeechResult } from "@/lib/speech-generator"
+import { VideoPreview } from "@/components/video-preview"
+import { SpeechResult } from "@/types/speech"
 
 export default function ContentRemixTool() {
   const [currentStep, setCurrentStep] = useState(1)
@@ -34,6 +35,7 @@ export default function ContentRemixTool() {
     { id: 2, title: "Extract Insights", icon: Sparkles, description: "AI transcription and key insights" },
     { id: 3, title: "Generate Script", icon: Leaf, description: "Create new agricultural content" },
     { id: 4, title: "Voiceover & Preview", icon: Mic, description: "Generate voiceover and preview" },
+    { id: 5, title: "Generated Mix Video", icon: Videotape, description: "Generate mix-video and preview" },
   ]
 
   return (
@@ -124,8 +126,17 @@ export default function ContentRemixTool() {
             <VoiceoverPreview
               script={generatedScript}
               onBack={() => setCurrentStep(3)}
+              onNext={() => setCurrentStep(5)}
               speechResult={memoizedSpeechResult}
               setSpeechResult={setSpeechResult}
+            />
+          )}
+
+          {currentStep === 5 && speechResult && (
+            <VideoPreview
+              videos={memoizedProcessedVideos}
+              onBack={() => setCurrentStep(4)}
+              speechResult={memoizedSpeechResult}
             />
           )}
         </div>
