@@ -16,22 +16,17 @@ export async function generateMixedVideo(
       console.log("Skipping video without URL:", v);
       continue;
     }
-    if (v.url.includes("tiktok.com")) {
-      console.log("Processing TikTok URL:", v.url);
-      try {
-        const res = await fetch(`/api/tiktok?url=${encodeURIComponent(v.url)}`);
-        console.log("TikTok fetch response status:", res.status);
-        if (!res.ok) throw new Error(`Failed to fetch direct TikTok URL: ${v.url}`);
-        const { videoUrl } = await res.json();
-        console.log("Received TikTok videoUrl:", videoUrl);
-        if (videoUrl) videoUrls.push(videoUrl);
-      } catch (err) {
-        console.error(`Error fetching TikTok direct URL for ${v.url}:`, err);
-      }
-    } else {
-      console.log("Adding non-TikTok URL:", v.url);
-      videoUrls.push(v.url);
-    }
+    console.log("Processing video url:", v.url);
+    
+    const res = await fetch(`/api/download-video?url=${encodeURIComponent(v.url)}`, { method: "GET" });
+    
+    if (!res.ok) throw new Error(`Failed to fetch direct TikTok URL: ${v.url}`);
+
+    const { videoUrl } = await res.json();
+    console.log("Received videoUrl:", videoUrl);
+    
+    if (videoUrl) 
+      videoUrls.push(videoUrl);
   }
 
   console.log("Collected videoUrls:", videoUrls);
