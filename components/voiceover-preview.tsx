@@ -17,6 +17,7 @@ import {
   estimateAudioDuration,
 } from "@/lib/speech-generator"
 import { SpeechResult } from "@/types/speech"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface VoiceoverPreviewProps {
   script: GeneratedScript
@@ -326,9 +327,9 @@ export function VoiceoverPreview({ script, onBack, onNext, speechResult, setSpee
       )}
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" onClick={onBack} >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Script
+          {useIsMobile() ? "" : "Back to script"}
         </Button>
         
         <Button onClick={onNext} disabled={!voiceoverGenerated} size="lg">

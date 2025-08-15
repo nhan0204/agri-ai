@@ -7,6 +7,7 @@ import { generateMixedVideo, checkRenderStatus, downloadVideo } from "@/lib/vide
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { SpeechResult } from "@/types/speech"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface VideoPreviewProps {
   videos: VideoFile[]
@@ -128,8 +129,9 @@ export function VideoPreview({ videos, speechResult, onBack }: VideoPreviewProps
       </Card>
 
       <div className="flex justify-between">
-        <Button variant="outline" onClick={onBack}>
-          <ArrowLeft className="h-4 w-4 mr-2" /> Back
+        <Button variant="outline" onClick={onBack} >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          {useIsMobile() ? "" : "Back to generate voiceover"}
         </Button>
       </div>
     </div>

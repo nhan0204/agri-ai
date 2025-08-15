@@ -12,6 +12,7 @@ import { ArrowLeft, Sparkles, Loader2, Copy, CheckCircle } from "lucide-react"
 import type { VideoFile, GeneratedScript, Region } from "@/types/video"
 import { generateScript } from "@/lib/script-generator"
 import { useToast } from "@/hooks/use-toast"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface ScriptGenerationProps {
   videos: VideoFile[]
@@ -263,9 +264,9 @@ Try this method and let me know in the comments how it works for you. Share this
 
       {/* Navigation */}
       <div className="flex justify-between">
-        <Button variant="outline" onClick={onBack}>
+        <Button variant="outline" onClick={onBack} >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Analysis
+          {useIsMobile() ? "" : "Back to Analysis"}
         </Button>
         <Button onClick={onNext} disabled={!generatedScript} size="lg">
           Generate Voiceover
