@@ -27,10 +27,7 @@ export async function GET(req: NextRequest) {
 
     if (!validLang) {
       return NextResponse.json(
-        {
-          error:
-            'Invalid language code. Must be in ISO-639-1 format (e.g., "en")',
-        },
+        { error: 'Invalid language code. Must be in ISO-639-1 format (e.g., "en")', },
         { status: 400 }
       );
     }
