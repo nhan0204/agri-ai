@@ -155,7 +155,7 @@ export function TranscriptionResults({
                   <h4 className="font-medium">{video.name.slice(0,125)}</h4>
                   <Badge variant="secondary">{video.duration}s</Badge>
                   {video.platform && (
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant={video.platform.toLowerCase() as "youtube" | "tiktok" | "outline"} className="text-xs">
                       {video.platform}
                     </Badge>
                   )}
