@@ -6,9 +6,13 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "update-ffmpeg": "bun scripts/copy-ffmpeg.ts"
   },
   "dependencies": {
+    "@ffmpeg/core-mt": "^0.12.9",
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "@ai-sdk/openai": "^2.0.10",
     "@ai-sdk/react": "^2.0.10",
     "@elevenlabs/elevenlabs-js": "^2.9.0",

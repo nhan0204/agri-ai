@@ -5,6 +5,8 @@ import { Download, Loader2, ArrowLeft } from "lucide-react"
 import type { VideoFile } from "@/types/video"
 import { generateMixedVideo, checkRenderStatus, downloadVideo } from "@/lib/video-generator"
 import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Slider } from "@/components/ui/slider"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { SpeechResult } from "@/types/speech"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -20,6 +22,8 @@ export function VideoPreview({ videos, speechResult, onBack }: VideoPreviewProps
   const [status, setStatus] = useState<"idle" | "generating" | "waiting" | "done" | "error">("idle")
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [volume, setVolume] = useState([10]) // Default volume set to 0.2
+  const [clipLength, setClipLength] = useState([10]) // Default clip length set to 10 seconds
 
   // Polling when waiting for render completion
   useEffect(() => {
@@ -47,7 +51,7 @@ export function VideoPreview({ videos, speechResult, onBack }: VideoPreviewProps
     setError(null)
     setStatus("generating")
     try {
-      const { renderId, videoUrl } = await generateMixedVideo(videos, speechResult)
+      const { renderId, videoUrl } = await generateMixedVideo(videos, speechResult, volume[0] / 100, clipLength[0])
       setRenderId(renderId)
 
       if (videoUrl) {
@@ -83,9 +87,31 @@ export function VideoPreview({ videos, speechResult, onBack }: VideoPreviewProps
         </CardHeader>
         <CardContent className="space-y-4">
           {status === "idle" && (
-            <Button className="w-full" onClick={handleGenerateVideo}>
-              Generate Video
-            </Button>
+            <div className="space-y-8">
+              <div className="space-y-2">
+                <Label>Adjust original audio: {volume}%</Label>
+                <Slider value={volume} onValueChange={setVolume} max={100} min={0} step={0.1} className="w-full" />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Quiet (0%)</span>
+                  <span>Normal (50%)</span>
+                  <span>Loud (100%)</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Adjust original clip length: {clipLength}s</Label>
+                <Slider value={clipLength} onValueChange={setClipLength} max={30} min={3} step={1} className="w-full" />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Flash (3s)</span>
+                  <span>Normal (16s)</span>
+                  <span>Lengthy (30s)</span>
+                </div>
+              </div>
+
+              <Button className="w-full" onClick={handleGenerateVideo}>
+                Generate Video
+              </Button>
+            </div>
           )}
 
           {status === "generating" && (

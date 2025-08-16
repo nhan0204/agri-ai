@@ -34,12 +34,11 @@ export async function generateScript(params: ScriptGenerationParams): Promise<Ge
 
   const context = regionContext[targetRegion as keyof typeof regionContext] || regionContext.philippines
 
-  const systemPrompt = `You are an expert agricultural content creator for TikTok. Create SHORT, cost-effective scripts for voiceover.
+  const systemPrompt = `You are an agricultural content creator for TikTok. Create SHORT, cost-effective scripts for voiceover.
                         STRICT REQUIREMENTS:
                         - Maximum 30-45 seconds when spoken (150-200 words MAX)
                         - NO scene descriptions, camera directions, or brackets
                         - Direct, conversational tone in ${context.language}
-                        - ONE main farming tip only
                         - Target: ${context.audience}
                         - End with simple call-to-action`
 
@@ -49,8 +48,7 @@ export async function generateScript(params: ScriptGenerationParams): Promise<Ge
                       Create a SHORT TikTok voiceover script (30-45 seconds max) that:
                       1. Teaches ONE specific farming technique
                       2. Uses simple, direct language
-                      3. Includes practical steps (max 3 steps)
-                      4. Ends with engagement question
+                      3. Ends with engagement question
                       NO scene descriptions. Pure voiceover text only.`
 
 

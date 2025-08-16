@@ -1,13 +1,12 @@
 "use client"
 
-import { useState, useRef, useMemo } from "react"
+import { useState, useRef, useMemo, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { ArrowLeft, Mic, Play, Pause, Download, Volume2, User, Clock } from "lucide-react"
 import type { GeneratedScript } from "@/types/video"
 import {
@@ -27,12 +26,21 @@ interface VoiceoverPreviewProps {
   setSpeechResult: (result: SpeechResult | null) => void
 }
 
+function formatTime(seconds: number): string {
+  const min = Math.floor(seconds / 60);
+  const sec = Math.floor(seconds % 60);
+  return `${min}:${sec.toString().padStart(2, '0')}`;
+}
+
 export function VoiceoverPreview({ script, onBack, onNext, speechResult, setSpeechResult }: VoiceoverPreviewProps) {
   const [selectedVoice, setSelectedVoice] = useState("kael-filipino")
   const [speed, setSpeed] = useState([1.0])
   const [isPlaying, setIsPlaying] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [currentProgress, setCurrentProgress] = useState(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const voiceoverGenerated = useMemo(() => {
@@ -44,17 +52,14 @@ export function VoiceoverPreview({ script, onBack, onNext, speechResult, setSpee
   const voices = AVAILABLE_VOICES
 
   const handleGenerateVoiceover = async () => {
-    
-
     setIsGenerating(true)
     setError(null)
 
     try {
       const result = await generateSpeech(script.script, {
         voiceId: selectedVoice,
-        modelId: "eleven_multilingual_v2",
-        outputFormat: "mp3_44100_128",
-        language: script.language
+        language: script.language,
+        speed: speed[0], // Use the first value from the slider array
       })
 
       if (!result.success) {
@@ -74,19 +79,52 @@ export function VoiceoverPreview({ script, onBack, onNext, speechResult, setSpee
     }
   }
 
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !audioUrl) return;
+
+    const updateTime = () => {
+      setCurrentTime(audio.currentTime);
+      if (audio.duration > 0) {
+        setCurrentProgress((audio.currentTime / audio.duration) * 100);
+      }
+    };
+
+    const handleLoadedMetadata = () => {
+      setDuration(audio.duration);
+    };
+
+    audio.addEventListener('timeupdate', updateTime);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('ended', handleAudioEnded);
+    audio.addEventListener('error', handleAudioError);
+
+    return () => {
+      audio.removeEventListener('timeupdate', updateTime);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('ended', handleAudioEnded);
+      audio.removeEventListener('error', handleAudioError);
+    };
+  }, [audioUrl]);
+
   const togglePlayback = () => {
-    if (!audioRef.current || !audioUrl) return
+    if (!audioRef.current || !audioUrl) return;
 
     if (isPlaying) {
-      audioRef.current.pause()
+      audioRef.current.pause();
     } else {
-      audioRef.current.play()
+      if (audioRef.current.ended) {
+        audioRef.current.currentTime = 0;
+      }
+      audioRef.current.play();
     }
-    setIsPlaying(!isPlaying)
+    setIsPlaying(!isPlaying);
   }
 
   const handleAudioEnded = () => {
-    setIsPlaying(false)
+    setIsPlaying(false);
+    setCurrentTime(duration);
+    setCurrentProgress(100);
   }
 
   const handleAudioError = () => {
@@ -106,7 +144,7 @@ export function VoiceoverPreview({ script, onBack, onNext, speechResult, setSpee
 
   return (
     <div className="space-y-6">
-      <audio ref={audioRef} onEnded={handleAudioEnded} onError={handleAudioError} style={{ display: "none" }} />
+      <audio ref={audioRef} style={{ display: "none" }} />
 
       <Card>
         <CardHeader>
@@ -195,11 +233,11 @@ export function VoiceoverPreview({ script, onBack, onNext, speechResult, setSpee
 
           <div className="space-y-2">
             <Label>Speaking Speed: {speed[0]}x</Label>
-            <Slider value={speed} onValueChange={setSpeed} max={2} min={0.5} step={0.1} className="w-full" />
+            <Slider value={speed} onValueChange={setSpeed} max={1.2} min={0.7} step={0.1} className="w-full" />
             <div className="flex justify-between text-xs text-gray-500">
-              <span>Slower (0.5x)</span>
+              <span>Slower (0.7x)</span>
               <span>Normal (1.0x)</span>
-              <span>Faster (2.0x)</span>
+              <span>Faster (1.2x)</span>
             </div>
           </div>
 
@@ -248,12 +286,12 @@ export function VoiceoverPreview({ script, onBack, onNext, speechResult, setSpee
                     <span className="text-sm font-medium">
                       {script.title} - {speechResult?.voiceUsed || selectedVoiceData?.name}
                     </span>
-                    <span className="text-sm text-gray-500">0:00 / {estimatedDuration}s</span>
+                    <span className="text-sm text-gray-500">{formatTime(currentTime)} / {formatTime(duration)}</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
-                      className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: isPlaying ? "45%" : "0%" }}
+                      className="bg-green-600 h-2 rounded-full transition-[width] duration-300 ease-linear"
+                      style={{ width: `${currentProgress}%` }}
                     />
                   </div>
                 </div>
@@ -265,63 +303,6 @@ export function VoiceoverPreview({ script, onBack, onNext, speechResult, setSpee
               Download Audio (MP3)
             </Button>
 
-            {/* <Separator />
-
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Video Preview</Label>
-              <div className="aspect-video bg-gray-900 rounded-lg relative overflow-hidden">
-                <img src="/filipino-farmer-rice-text.png" alt="Video preview" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center">
-                  <Button
-                    variant="secondary"
-                    size="lg"
-                    onClick={togglePlayback}
-                    className="bg-white bg-opacity-90 hover:bg-opacity-100"
-                  >
-                    {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-1" />}
-                  </Button>
-                </div>
-
-                <div className="absolute bottom-4 left-4 right-4">
-                  <div className="bg-black bg-opacity-75 rounded px-3 py-2">
-                    <p className="text-white text-sm text-center">"{script.script.substring(0, 60)}..."</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <Button variant="outline" className="flex-1 bg-transparent" onClick={handleDownloadAudio}>
-                <Download className="h-4 w-4 mr-2" />
-                Download Audio (MP3)
-              </Button>
-              <Button className="flex-1" disabled>
-                <Download className="h-4 w-4 mr-2" />
-                Download Video (Coming Soon)
-              </Button>
-            </div>
-
-            <div className="bg-green-50 rounded-lg p-4">
-              <h4 className="font-medium text-green-900 mb-2">Export Summary</h4>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-green-700">Duration:</span>
-                  <span className="ml-2 font-medium">{estimatedDuration}s</span>
-                </div>
-                <div>
-                  <span className="text-green-700">Voice:</span>
-                  <span className="ml-2 font-medium">{speechResult?.voiceUsed || selectedVoiceData?.name}</span>
-                </div>
-                <div>
-                  <span className="text-green-700">Language:</span>
-                  <span className="ml-2 font-medium">{script.language}</span>
-                </div>
-                <div>
-                  <span className="text-green-700">Speed:</span>
-                  <span className="ml-2 font-medium">{speed[0]}x</span>
-                </div>
-              </div>
-            </div> */}
           </CardContent>
         </Card>
       )}

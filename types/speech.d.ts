@@ -15,6 +15,7 @@ export interface SpeechOptions {
   modelId?: string
   outputFormat?: string
   language?: Language
+  speed?: number
 }
 
 export interface SpeechResult {

@@ -1,10 +1,11 @@
 import { SpeechResult } from "@/types/speech";
 import { VideoFile } from "@/types/video";
-import cloudinary from "cloudinary";
 
 export async function generateMixedVideo(
   videos: VideoFile[],
-  speechResult: SpeechResult | null
+  speechResult: SpeechResult | null,
+  volume: number = 0.1,
+  clipLength: number = 10
 ): Promise<{ renderId: string; status: string; videoUrl: string }> {
   console.log("Starting generateMixedVideo with videos:", videos, "and speechResult:", speechResult);
 
@@ -39,16 +40,15 @@ export async function generateMixedVideo(
   // Build video clips
   let currentStart = 0;
   const clips = videoUrls.map((url, index) => {
-    const clipLength = 5;
     const clip = {
-      asset: { type: "video", src: url, trim: 0 },
+      asset: { type: "video", src: url, trim: 0, volume: volume },
       start: currentStart,
       length: clipLength,
-      transition: index > 0 ? { in: "fade", duration: 1 } : undefined,
+      transition: index > 0 ? { in: "fade" } : undefined,  // Removed invalid 'duration'; use 'fade' for 1-second default
     };
     currentStart += clipLength;
     return clip;
-  });
+  })
 
   console.log("Built clips:", clips);
 
@@ -109,7 +109,7 @@ export async function generateMixedVideo(
     },
   };
 
-  console.log("Requesting payload: ", payload);
+  console.log("Rendering timeline: ", timeline);
 
   console.log("Sending POST to /api/video/generate");
   const res = await fetch("/api/video/generate", {

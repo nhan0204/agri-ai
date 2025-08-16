@@ -36,18 +36,8 @@ export const AVAILABLE_VOICES: VoiceOption[] = [
  */
 export async function generateSpeech(text: string, options: SpeechOptions = {}): Promise<SpeechResult> {
   try {
-    // Default options
-    const defaultOptions: SpeechOptions = {
-      voiceId: "boses-batibot",
-      modelId: "eleven_multilingual_v2",
-      outputFormat: "mp3_44100_128",
-      language: "en",
-    }
-
-    const finalOptions = { ...defaultOptions, ...options }
-
     // Find the voice configuration
-    const voice = AVAILABLE_VOICES.find((v) => v.id === finalOptions.voiceId) || AVAILABLE_VOICES[0]
+    const voice = AVAILABLE_VOICES.find((v) => v.id === options.voiceId) || AVAILABLE_VOICES[0]
 
     // Call the API route
     const response = await fetch("/api/speech/tts", {
@@ -58,9 +48,8 @@ export async function generateSpeech(text: string, options: SpeechOptions = {}):
       body: JSON.stringify({
         text: text.trim(),
         voiceId: voice.elevenLabsId,
-        modelId: finalOptions.modelId,
-        outputFormat: finalOptions.outputFormat,
-        languageCode: options.language,
+        outputFormat: options.outputFormat,
+        speed: options.speed || 1.0, // Default speed if not provided
       }),
     })
 
