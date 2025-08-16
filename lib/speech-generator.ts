@@ -50,7 +50,7 @@ export async function generateSpeech(text: string, options: SpeechOptions = {}):
     const voice = AVAILABLE_VOICES.find((v) => v.id === finalOptions.voiceId) || AVAILABLE_VOICES[0]
 
     // Call the API route
-    const response = await fetch("/api/text-to-speech", {
+    const response = await fetch("/api/speech/tts", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

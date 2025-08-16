@@ -52,7 +52,7 @@ export async function transcribeVideoFromUrl(
 
       console.log("External url detected");
 
-      const response = await fetch(`api/whisper?url=${videoUrl}&lang=${language}`, {
+      const response = await fetch(`api/speech/stt?url=${videoUrl}&lang=${language}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       })

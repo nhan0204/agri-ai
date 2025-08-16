@@ -74,7 +74,9 @@ export async function GET(req: NextRequest) {
       system:
         "You are an  South East Asia linguist." +
         "You understand Thai, Lao, Cambodian, Vietnamese, Malaysian" +
-        "You must return the translation only and no excessive words",
+        "You must return the translation only and no excessive words" +
+        "If it's not meaningful speech, return exactly 'No speech detected' and nothing else." +
+        "If it is meaningful speech, return the translation only and no excessive words.",
       prompt: `Translate this transcript into English ${transcription.text}`,
     });
 

@@ -1,6 +1,4 @@
 import { Language } from '@/types/video';
-import axios from 'axios';
-import * as cheerio from 'cheerio';
 import { v4 as uuidv4 } from 'uuid';
 
 interface VideoMetadata {
@@ -59,7 +57,7 @@ async function getTikTokMetadata(videoId: string): Promise<VideoMetadata | null>
       throw new Error('Failed to fetch TikTok metadata');
     }
 
-    const languageDetection = await fetch('api/language', {
+    const languageDetection = await fetch('api/video/language', {
       method: "POST",
       body: JSON.stringify({ title: data.title })
     })
@@ -86,7 +84,7 @@ async function getTikTokMetadata(videoId: string): Promise<VideoMetadata | null>
 // YouTube metadata via scraping (no API key)
 async function getYouTubeMetadata(videoId: string): Promise<VideoMetadata | null> {
   try {
-    const response = await fetch(`/api/metadata?videoId=${videoId}`);
+    const response = await fetch(`/api/video/metadata?videoId=${videoId}`);
     if (!response.ok) {
       throw new Error('Failed to fetch YouTube metadata from API');
     }
@@ -97,7 +95,7 @@ async function getYouTubeMetadata(videoId: string): Promise<VideoMetadata | null
       throw new Error('Failed to fetch Youtube metadata');
     }
 
-    const languageDetection = await fetch('api/language', {
+    const languageDetection = await fetch('api/video/language', {
       method: "POST",
       body: JSON.stringify({ title: data.title })
     })

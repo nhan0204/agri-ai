@@ -1,6 +1,6 @@
 export async function extractAgriculturalInsights(transcription: string): Promise<string[]> {
   try {
-    const response = await fetch('/api/insights', {
+    const response = await fetch('/api/script/insights', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

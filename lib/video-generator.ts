@@ -12,15 +12,15 @@ export async function generateMixedVideo(
 
   // Process video URLs
   for (const v of videos) {
-    if (!v.url) {
+    if (!v.videoUrl) {
       console.log("Skipping video without URL:", v);
       continue;
     }
-    console.log("Processing video url:", v.url);
+    console.log("Processing video url:", v.videoUrl);
     
-    const res = await fetch(`/api/download-video?url=${encodeURIComponent(v.url)}`, { method: "GET" });
+    const res = await fetch(`/api/video/download?url=${encodeURIComponent(v.videoUrl)}`, { method: "GET" });
     
-    if (!res.ok) throw new Error(`Failed to fetch direct TikTok URL: ${v.url}`);
+    if (!res.ok) throw new Error(`Failed to fetch direct TikTok URL: ${v.videoUrl}`);
 
     const { videoUrl } = await res.json();
     console.log("Received videoUrl:", videoUrl);
@@ -60,13 +60,13 @@ export async function generateMixedVideo(
     console.log("Handling audio URL:", speechResult.audioUrl);
     let audioUrl = speechResult.audioUrl;
     if (speechResult.audioUrl.startsWith("blob:")) {
-      console.log("Uploading blob to /api/upload-audio");
+      console.log("Uploading blob to /api/audio/upload");
       const formData = new FormData();
       const response = await fetch(speechResult.audioUrl);
       const audioBlob = await response.blob();
       formData.append("audio", audioBlob, "speech_audio.mp3");
 
-      const uploadRes = await fetch("/api/upload-audio", {
+      const uploadRes = await fetch("/api/audio/upload", {
         method: "POST",
         body: formData,
       });
@@ -111,8 +111,8 @@ export async function generateMixedVideo(
 
   console.log("Requesting payload: ", payload);
 
-  console.log("Sending POST to /api/generate-video");
-  const res = await fetch("/api/generate-video", {
+  console.log("Sending POST to /api/video/generate");
+  const res = await fetch("/api/video/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ payload }),
@@ -134,7 +134,7 @@ export async function generateMixedVideo(
 
 export async function checkRenderStatus(renderId: string) {
   console.log("Checking render status for renderId:", renderId);
-  const res = await fetch(`/api/generate-video/stage?renderId=${renderId}`);
+  const res = await fetch(`/api/video/generate/stage?renderId=${renderId}`);
   console.log("Status check response status:", res.status);
   if (!res.ok) {
     const errorText = await res.text();

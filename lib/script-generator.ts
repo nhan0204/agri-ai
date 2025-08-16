@@ -63,7 +63,7 @@ export async function generateScript(params: ScriptGenerationParams): Promise<Ge
   const language: Language = regionLanguage[targetRegion];
 
   try {
-    const response = await fetch("api/generate-script", {
+    const response = await fetch("api/script/generate", {
       method: "POST",
       body: JSON.stringify({ system: systemPrompt, prompt: userPrompt, lang: language })
     });

@@ -35,7 +35,7 @@ export function TranscriptionResults({
   const isProcessingRef = useRef(false)
 
   const getUnprocessedVideos = () => videos.filter(
-    (video) => !processedUrlsRef.current.has(video.url) && !processedVideos.some((pv) => pv.url === video.url),
+    (video) => !processedUrlsRef.current.has(video.videoUrl) && !processedVideos.some((process) => process.videoUrl === video.videoUrl),
   )
 
   const shouldProcessVideos = useMemo(() => {
@@ -69,12 +69,13 @@ export function TranscriptionResults({
       const video = unprocessedVideos[i]
       setCurrentProcessing(processedVideos.length + i + 1)
 
-      processedUrlsRef.current.add(video.url)
+      processedUrlsRef.current.add(video.videoUrl)
 
       try {
-        console.log(`Processing video: ${video.url}`)
-        const transcriptionResult = await transcribeVideoFromUrl(video.url, video.language)
-        const keyInsights = await extractAgriculturalInsights([transcriptionResult.text, video.name].join(' '))
+        console.log(`Processing video: ${video.videoUrl}`)
+
+        const transcriptionResult = await transcribeVideoFromUrl(video.videoUrl, video.language);
+        const keyInsights = await extractAgriculturalInsights([transcriptionResult.text, video.name].join(' '));
 
         const processedVideo = {
           ...video,
@@ -151,7 +152,7 @@ export function TranscriptionResults({
               <div key={video.id} className="space-y-3">
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-4 w-4 text-green-600" />
-                  <h4 className="font-medium">{video.name}</h4>
+                  <h4 className="font-medium">{video.name.slice(0,125)}</h4>
                   <Badge variant="secondary">{video.duration}s</Badge>
                   {video.platform && (
                     <Badge variant="outline" className="text-xs">
@@ -160,7 +161,7 @@ export function TranscriptionResults({
                   )}
                 </div>
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-700 leading-relaxed">{video.transcription}</p>
+                  <p className="text-sm text-gray-700 leading-relaxed">{video.transcription?.slice(0,255)}</p>
                 </div>
 
                 {video.keyInsights && video.keyInsights.length > 0 && (

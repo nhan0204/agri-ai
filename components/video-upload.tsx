@@ -73,7 +73,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
       const newVideo: VideoFile = {
         id: `${Date.now()}-${Math.random()}`,
         name: file.name,
-        url: videoUrl,
+        videoUrl: videoUrl,
         duration: duration,
         language: 'en',
         transcription: "Processing transcription...",
@@ -99,7 +99,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
 
     setIsProcessingUrl(true)
 
-    const duplicate = uploadedVideos.find((video) => video.url === url)
+    const duplicate = uploadedVideos.find((video) => video.videoUrl === url)
 
     if (duplicate) {
       toast({
@@ -137,7 +137,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
       const newVideo: VideoFile = {
         id: Date.now().toString(),
         name: metadata.title,
-        url: url,
+        videoUrl: url,
         thumbnail: metadata.thumbnail || "/video-thumbnail.png",
         duration: metadata.duration,
         transcription: "Processing transcription...",
@@ -286,12 +286,12 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
                     <X className="h-4 w-4" />
                   </Button>
                   <Link
-                    href={video.url} 
+                    href={video.videoUrl} 
                     target="_blank"
                     rel="noopner noreferrer" 
                   >
-                    {video.url.startsWith("blob:") ? (
-                      <video src={video.url} className="w-full h-32 object-cover rounded mb-3 hover:opacity-70 " controls={false} muted />
+                    {video.videoUrl.startsWith("blob:") ? (
+                      <video src={video.videoUrl} className="w-full h-32 object-cover rounded mb-3 hover:opacity-70 " controls={false} muted />
                     ) : (
                       <img
                         src={video.thumbnail || "/placeholder.svg"}
@@ -299,7 +299,7 @@ export function VideoUpload({ onVideosUploaded, onNext, uploadedVideos }: VideoU
                         className="w-full h-32 object-cover rounded mb-3"
                       />
                     )}
-                    <h4 className="font-medium text-sm mb-1">{video.name}</h4>
+                    <h4 className="font-medium text-sm mb-1">{video.name.slice(0, 125)}</h4>
                     <p className="text-xs text-gray-500">{video.duration}s duration</p>
                   </Link>
                 </div>
